@@ -19,6 +19,8 @@ class CreateServicesTable extends Migration
             $table->unsignedBigInteger('category_id');
             $table->unsignedBigInteger('provider_id');
             $table->double('price')->nullable()->default('0');
+            $table->double('min_price_range')->nullable()->default('0');
+            $table->double('max_price_range')->nullable()->default('0');
             $table->string('type')->nullable()->default()->comment('fixed , hourly');
             $table->string('duration')->nullable();
             $table->double('discount')->nullable()->comment('in percentage');
@@ -26,7 +28,7 @@ class CreateServicesTable extends Migration
             $table->text('description')->nullable();
             $table->tinyInteger('is_featured')->nullable()->default('0');
             $table->bigInteger('added_by')->nullable();
-                        
+
             $table->foreign('provider_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('category_id')->references('id')->on('categories')->onDelete('cascade');
             $table->softDeletes();
