@@ -1,6 +1,13 @@
 <?php
 
 return [
+
+    // @Lee
+    'is_ranger' => 'Interval de prix ?',
+    'price_ranger' => 'Interval de prix',
+    'min_price' => 'Prix min',
+    'max_price' => 'Prix max', 
+    //
     'user' => 'Utilisateur',
     'user_information' => 'Informations sur l\'utilisateur',
     'srno' => 'N°',
