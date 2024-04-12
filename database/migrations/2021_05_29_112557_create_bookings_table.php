@@ -35,6 +35,7 @@ class CreateBookingsTable extends Migration
             $table->foreign('provider_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('customer_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('service_id')->references('id')->on('services')->onDelete('cascade');
+            $table->double('price')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });

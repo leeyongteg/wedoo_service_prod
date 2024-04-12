@@ -2,27 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Booking;
-use App\Models\Coupon;
-use App\Models\Service;
-use App\Models\Payment;
+use PDF;
+use Carbon\Carbon;
 use App\Models\User;
+use App\Models\Coupon;
+use App\Models\Booking;
+use App\Models\Country;
+use App\Models\Payment;
+use App\Models\Service;
+use App\Models\Setting;
+use App\Models\AppSetting;
+use App\Models\Notification;
+use App\Models\ServiceAddon;
+use Illuminate\Http\Request;
+use App\Models\BookingRating;
 use App\Models\BookingStatus;
 use App\Models\PostJobRequest;
-use App\Models\ProviderAddressMapping;
-use App\Http\Requests\BookingUpdateRequest;
-use App\Models\Notification;
-use Yajra\DataTables\DataTables;
-use PDF;
-use App\Models\AppSetting;
-use Carbon\Carbon;
-use App\Traits\NotificationTrait;
 
-use App\Models\ServiceAddon;
-use App\Models\BookingRating;
-use App\Models\Setting;
-use App\Models\Country;
+use Yajra\DataTables\DataTables;
+use App\Traits\NotificationTrait;
+use App\Models\ProviderAddressMapping;
+use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\BookingUpdateRequest;
+
 class BookingController extends Controller
 {
     use NotificationTrait;
@@ -84,11 +86,11 @@ class BookingController extends Controller
             ->editColumn('date' , function ($query){
                 $sitesetup = Setting::where('type','site-setup')->where('key', 'site-setup')->first();
                 $datetime = $sitesetup ? json_decode($sitesetup->value) : null;
-                        
+
                 $date = optional($datetime)->date_format && optional($datetime)->time_format
                 ? date(optional($datetime)->date_format, strtotime($query->date)) . ' / ' . date(optional($datetime)->time_format, strtotime($query->date))
                 : $query->date;
-                
+
                 return $date;
             })
             ->editColumn('provider_id' , function ($query){
@@ -400,6 +402,14 @@ class BookingController extends Controller
         $relation = [
             'status' => BookingStatus::where('status',1)->orderBy('sequence','ASC')->get()->pluck('label', 'value'),
         ];
+        /** @Lee */
+        // L'ajout de cette partie permet de recuperer la marge de prix pour pouvoir les afficher en front
+        $serviceData = $bookingdata->service;
+        $service = [
+            'type' => $serviceData->type,
+            'min_price_range' => $serviceData->min_price_range,
+            'max_price_range' => $serviceData->max_price_range,
+        ];
         return view('booking.edit', compact('pageTitle' ,'bookingdata' ,'auth_user' )+$relation);
     }
 
@@ -417,15 +427,29 @@ class BookingController extends Controller
         }
         $data = $request->all();
 
-
-
         $data['date'] = isset($request->date) ? date('Y-m-d H:i:s',strtotime($request->date)) : date('Y-m-d H:i:s');
         $data['start_at'] = isset($request->start_at) ? date('Y-m-d H:i:s',strtotime($request->start_at)) : null;
         $data['end_at'] = isset($request->end_at) ? date('Y-m-d H:i:s',strtotime($request->end_at)) : null;
 
-
         $bookingdata = Booking::find($id);
         $paymentdata = Payment::where('booking_id',$id)->first();
+
+        /** @Lee */
+        // @Todo valider que le min_price soit inferieur au max_price
+        // Ce bout de code permet de valider s'il existe la plage de prix
+        // Calculer le prix de la facture
+        if ($request->has('price')) {
+            $service = $bookingdata->service;
+            $validator = Validator::make($request->all(), [
+                'price' => "required|numeric|between:$service->min_price_range,$service->max_price_range",
+            ]);
+            if ($validator->fails())
+                return redirect()->back()->withErrors($validator)->withInput();
+            $data['price'] = ($validator->validated())['price'];
+            $data['amount'] =  $data['price'];
+            $data['total_amount'] = $data['amount'] * (1 - $bookingdata->discount / 100);
+        }
+
         if($data['status'] === 'hold'){
             if($bookingdata->start_at == null && $bookingdata->end_at == null){
                 $duration_diff = duration($data['start_at'] ,$data['end_at'] ,'in_minute');
@@ -465,6 +489,7 @@ class BookingController extends Controller
             $this->sendNotification($activity_data);
 
         }
+        //@Todo Message pour changement de prix
         if($bookingdata->payment_id != null){
             $data['payment_status'] = isset($data['payment_status']) ? $data['payment_status'] : 'pending';
             $paymentdata->update($data);

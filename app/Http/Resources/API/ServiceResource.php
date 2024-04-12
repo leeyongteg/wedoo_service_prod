@@ -51,6 +51,8 @@ class ServiceResource extends JsonResource
             'visit_type'           => $this->visit_type,
             'is_enable_advance_payment' => $this->is_enable_advance_payment,
             'advance_payment_amount' => $this->advance_payment_amount== null ? 0:(double) $this->advance_payment_amount,
+            'min_price_range'     => $this->min_price_range,
+            'max_price_range'     => $this->max_price_range,
         ];
     }
 }

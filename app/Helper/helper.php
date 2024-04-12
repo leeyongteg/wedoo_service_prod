@@ -309,6 +309,27 @@ function envChanges($type,$value){
     }
 }
 
+/** @Lee */
+function getCurrencySymbol()
+{
+
+    $sitesetup = App\Models\Setting::where('type', 'site-setup')->where('key', 'site-setup')->first();
+    $sitesetupdata = $sitesetup ? json_decode($sitesetup->value) : null;
+    $currencyId = optional($sitesetupdata)->default_currency;
+    $country = App\Models\Country::find($currencyId);
+
+    return    $country->symbol;
+}
+/** @Lee */
+function getPriceFormatOnlyWithEndZero($price)
+{
+    $price = (float)$price;
+
+    if ($price == null) return 0;
+
+    return number_format((float)$price, 2, '.', '');
+}
+
 function getPriceFormat($price){
     $price = (double)$price;
 
