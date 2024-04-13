@@ -405,7 +405,7 @@ class BookingController extends Controller
     $relation = [
       'status' => BookingStatus::where('status', 1)->orderBy('sequence', 'ASC')->get()->pluck('label', 'value'),
     ];
-    
+
     return view('booking.edit', compact('pageTitle', 'bookingdata', 'auth_user') + $relation);
   }
 
@@ -910,5 +910,78 @@ class BookingController extends Controller
       return $data_final_price;
 
     $result->update($data_final_price);
+  }
+
+  /**
+   * @Lee
+   *
+   * @param Request $request
+   * @return void
+   */
+  public function  bookingAssignProviderForm(Request $request)
+  {
+    $bookingdata = Booking::find($request->id);
+    $pageTitle = __('messages.assign_form_title', ['form' => __('messages.booking')]);
+    return view('booking.assigned_provider_form', compact('bookingdata', 'pageTitle'));
+  }
+
+  /**
+   * @Lee
+   *
+   * @param Request $request
+   * @return void
+   */
+  public function bookingAssignedProvider(Request $request)
+  {
+    //@todo Activity type verification
+    $bookingdata =  Booking::find($request->id);
+
+    $assigned_provider_ids = [];
+    if ($bookingdata->providerAdded()->count() > 0) {
+      $assigned_provider_ids = $bookingdata->providerAdded()->pluck('provider_id')->toArray();
+      $bookingdata->providerAdded()->delete();
+      $message = __('messages.transfer_to_provider');
+      $activity_type = 'transfer_booking';
+    } else {
+      $message = __('messages.assigned_to_provider');
+      $activity_type = 'assigned_booking';
+    }
+
+    $remove_notification_id = [];
+    if ($request->provider_id != null) {
+      foreach ($request->provider_id as $provider) {
+        $assign_to_provider = [
+          'booking_id'   => $bookingdata->id,
+          'provider_id'  => $provider
+        ];
+        $remove_notification_id = removeArrayValue($provider, $assigned_provider_ids);
+        $bookingdata->providerAdded()->insert($assign_to_provider);
+      }
+    }
+
+    if (!empty($remove_notification_id)) {
+      $search = "id" . '":' . $bookingdata->id;
+
+      Notification::whereIn('notifiable_id', $remove_notification_id)
+        ->whereJsonContains('data->id', $bookingdata->id)
+        ->delete();
+    }
+
+    $bookingdata->status = 'accept';
+    $bookingdata->save();
+
+    $activity_data = [
+      'activity_type' => $activity_type,
+      'booking_id' => $bookingdata->id,
+      'booking' => $bookingdata,
+    ];
+
+    $this->sendNotification($activity_data);
+    $message = __('messages.save_form', ['form' => __('messages.booking')]);
+    if ($request->is('api/*')) {
+      return comman_message_response($message);
+    }
+
+    return response()->json(['status' => true, 'event' => 'callback', 'message' => $message]);
   }
 }

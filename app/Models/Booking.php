@@ -212,6 +212,11 @@ class Booking extends Model
         return $query->orderBy('updated_at', 'desc');
     }
 
+    public function providerAdded()
+    {
+        return $this->hasMany(BookingProviderMapping::class, 'booking_id', 'id')->with(['provider']);
+    }
+
     public function getHourlyPrice(): float
     {
         $totalOneHourSeconds = 3600;

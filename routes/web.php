@@ -191,8 +191,6 @@ Route::group(['middleware' => ['auth', 'verified']], function()
     Route::post('save-payment',[App\Http\Controllers\API\PaymentController::class, 'savePayment'])->name('payment.save');
     Route::get('save-stripe-payment/{id}',[App\Http\Controllers\BookingController::class, 'saveStripePayment']);
 
-    
-
     Route::get('user-change-password', [ CustomerController::class , 'getChangePassword'])->name('user.getchangepassword');
     Route::post('user-change-password', [ CustomerController::class , 'changePassword'])->name('user.changepassword');
     Route::group(['middleware' => ['permission:user list']], function () {
@@ -209,7 +207,9 @@ Route::group(['middleware' => ['auth', 'verified']], function()
     Route::post('booking-assigned',[BookingController::class,'bookingAssigned'])->name('booking.assigned');
     Route::get('comission/{id}',[SettingController::class,'comission'])->name('setting.comission');
     Route::get('details/{id}',[BookingController::class,'bookingDetailsData'])->name('booking.detailsdata');
-
+    //Admin assign provider @Lee
+    Route::get('booking-assign-provider-form/{id}', [BookingController::class, 'bookingAssignProviderForm'])->name('booking.assign_provider_form');
+    Route::post('booking-assigned-provider', [BookingController::class, 'bookingAssignedProvider'])->name('booking.assigned_provider');
 
     // Setting
     Route::get('setting/{page?}',[ SettingController::class, 'settings'])->name('setting.index');
@@ -220,7 +220,6 @@ Route::group(['middleware' => ['auth', 'verified']], function()
     // Route::post('provider-dashboard-setting',[ SettingController::class , 'providerdashboardtogglesetting'])->name('providertogglesetting');
     // Route::post('handyman-dashboard-setting',[ SettingController::class , 'handymandashboardtogglesetting'])->name('handymantogglesetting');
     // Route::post('config-save',[ SettingController::class , 'configUpdate'])->name('configUpdate');
-
 
     Route::post('env-setting', [ SettingController::class , 'envChanges'])->name('envSetting');
     Route::post('update-profile', [ SettingController::class , 'updateProfile'])->name('updateProfile');
@@ -428,7 +427,6 @@ Route::group(['middleware' => ['auth', 'verified']], function()
         Route::get('notification-template', [NotificationTemplatesController::class, 'notificationTemplate'])->name('notification-template');
         Route::post('channels-update', [NotificationTemplatesController::class, 'updateChanels'])->name('settings.update');
         Route::post('update-status/{id}', [NotificationTemplatesController::class, 'update_status'])->name('update_status');
-       
     });
     Route::post('notification-template-bulk-action', [NotificationTemplatesController::class, 'bulk_action'])->name('notificationtemplate.bulk_action');
     Route::resource('notification-templates', NotificationTemplatesController::class, ['names' => 'notification-templates']);

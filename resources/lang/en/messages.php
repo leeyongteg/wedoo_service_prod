@@ -9,8 +9,10 @@ return [
     'amount_fixed_price' => 'The price of the service has not been defined yet. 🤑',
     'fixed_price_not_define' => 'To be defined',
     'assign_provider' => 'Assign Provider',
-    'booking_assigned' => 'Booking has been assigned to provider :name ',
-    'booking_transfer' => 'Booking has been transfer to provider :name ',
+    'assigned_to_provider' => 'Booking has been assigned to provider :name ',
+    'transfer_to_provider' => 'Booking has been transfer to provider :name ',
+    'transfer_to_handyman' => 'Booking has been transfer to handyman :name ',
+    'assigned_to_handyman' => 'Booking has been assigned to handyman :name ',
     // End
     'user' => 'User',
     'user_information' => 'User Information',
