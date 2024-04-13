@@ -1,13 +1,14 @@
 <?php
 
 return [
-
     // @Lee
     'is_ranger' => 'Interval de prix ?',
     'price_ranger' => 'Interval de prix',
     'min_price' => 'Prix min',
-    'max_price' => 'Prix max', 
-    //
+    'max_price' => 'Prix max',
+    'amount_fixed_price' => "Le prix du service n'a pas encore été défini. 🤑",
+    'fixed_price_not_define' => 'À définir',
+    // End
     'user' => 'Utilisateur',
     'user_information' => 'Informations sur l\'utilisateur',
     'srno' => 'N°',

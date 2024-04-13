@@ -6,7 +6,9 @@ return [
     'price_ranger' => 'Range price',
     'min_price' => 'Min price',
     'max_price' => 'Max price',
-    //
+    'amount_fixed_price' => 'The price of the service has not been defined yet. 🤑',
+    'fixed_price_not_define' => 'To be defined',
+    // End
     'user' => 'User',
     'user_information' => 'User Information',
     'srno' => 'No',
