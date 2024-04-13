@@ -8,6 +8,9 @@ return [
     'max_price' => 'Prix max',
     'amount_fixed_price' => "Le prix du service n'a pas encore été défini. 🤑",
     'fixed_price_not_define' => 'À définir',
+    'assign_provider' => 'Attribuer Provider',
+    'booking_assigned_provider' => 'La réservation a été attribuée  au provider :name',
+    'booking_transfer_provider' => 'La réservation a été transférée au provider :name',
     // End
     'user' => 'Utilisateur',
     'user_information' => 'Informations sur l\'utilisateur',

@@ -15,12 +15,20 @@
             </p>
         </div>
         <div class="d-flex flex-xxl-nowrap flex-wrap gap-3" data-select2-id="select2-data-8-5c7s">
-            <div class="w3-third">
+                {{-- Assign handyman --}}
                 @if ($bookingdata->handymanAdded->count() == 0)
                     @hasanyrole('admin|demo_admin|provider')
                         <a href="{{ route('booking.assign_form', ['id' => $bookingdata->id]) }}"
-                            class="btn btn-sm btn-primary loadRemoteModel float-right"><i class="lab la-telegram-plane"></i>
+                            class="btn btn-sm btn-secondary loadRemoteModel float-right"><i class="lab la-telegram-plane"></i>
                             {{ __('messages.assign') }}</a>
+                    @endhasanyrole
+                @endif
+                {{-- Assign provider --}}
+                @if ($bookingdata->providerAdded->count() == 0)
+                    @hasanyrole('admin|demo_admin|provider')
+                        <a href="{{ route('booking.assign_provider_form', ['id' => $bookingdata->id]) }}"
+                            class="btn btn-sm btn-primary loadRemoteModel float-right mr-2"><i class="lab la-telegram-plane"></i>
+                            {{ __('messages.assign_provider') }}</a>
                     @endhasanyrole
                 @endif
             </div>
