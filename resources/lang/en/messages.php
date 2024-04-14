@@ -13,6 +13,10 @@ return [
     'transfer_to_provider' => 'Booking has been transfer to provider :name ',
     'transfer_to_handyman' => 'Booking has been transfer to handyman :name ',
     'assigned_to_handyman' => 'Booking has been assigned to handyman :name ',
+    'subscribe' => 'Subscribe',
+    'servicesubscribe' => 'Subscribe on this service',
+    'enable_unsubscription_service' => 'Unsubscribe to the service',
+    'my_services' => 'My services',
     // End
     'user' => 'User',
     'user_information' => 'User Information',

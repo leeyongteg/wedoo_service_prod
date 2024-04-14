@@ -13,6 +13,10 @@ return [
     'booking_transfer_provider' => 'La réservation a été transférée au provider :name',
     'transfer_to_handyman' => 'La réservation a été attribuée  au technicien :name',
     'assigned_to_handyman' => 'La réservation a été transférée au technicien :name',
+    'subscribe' => 'Souscrire',
+    'servicesubscribe' => 'Souscrice au service',
+    'enable_unsubscription_service' => 'Se désabonner au service',
+    'my_services' => 'Mes services',
     // End
     'user' => 'Utilisateur',
     'user_information' => 'Informations sur l\'utilisateur',

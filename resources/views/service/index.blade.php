@@ -34,7 +34,7 @@
                       <option value="restore">{{ __('messages.restore') }}</option>
                       <option value="permanently-delete">{{ __('messages.permanent_dlt') }}</option>
                   </select>
-                
+
                 <div class="select-status d-none quick-action-field" id="change-status-action" style="width:100%">
                     <select name="status" class="form-control select2" id="status" >
                       <option value="1">{{ __('messages.active') }}</option>
@@ -48,7 +48,7 @@
                 title="{{ __('service',['form'=>  __('service') ]) }}"
                 data-message='{{ __("Do you want to perform this action?") }}' disabled>{{ __('messages.apply') }}</button>
             </div>
-          
+
             </form>
           </div>
               <div class="d-flex justify-content-end">
@@ -64,10 +64,10 @@
                     <input type="text" class="form-control dt-search" placeholder="Search..." aria-label="Search" aria-describedby="addon-wrapping" aria-controls="dataTableBuilder">
                   </div>
               </div>
-               
+
               <div class="table-responsive">
                 <table id="datatable" class="table table-striped border">
-                  
+
                 </table>
               </div>
             </div>
@@ -75,7 +75,7 @@
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', (event) => {
-          
+
         window.renderedDataTable = $('#datatable').DataTable({
                 processing: true,
                 serverSide: true,
@@ -94,7 +94,7 @@
                     }
                   },
                 },
-                
+
                 columns: [
                     {
                         name: 'check',
@@ -130,15 +130,20 @@
                         title: "{{ __('messages.status') }}"
                     },
                     {
+                        data: 'subscribe',
+                        name: 'subscribe',
+                        title: "{{ __('messages.subscribe') }}"
+                    },
+                    {
                         data: 'action',
                         name: 'action',
                         orderable: false,
                         searchable: false,
                         title: "{{ __('messages.action') }}"
                     }
-                    
+
                 ]
-                
+
             });
       });
 
@@ -164,7 +169,7 @@
     resetQuickAction()
   });
   $(document).on('update_quick_action', function() {
-     
+
     })
 
 
