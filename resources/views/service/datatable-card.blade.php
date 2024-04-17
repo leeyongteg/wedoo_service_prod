@@ -5,7 +5,7 @@
       @endif
       <a href="{{ route('service.detail', $data->id) }}" class="service-img">
          <img src="{{ getSingleMedia($data,'service_attachment', null) }}" alt="service"
-         class="service-img w-100 object-cover img-fluid rounded-3"> 
+         class="service-img w-100 object-cover img-fluid rounded-3">
       </a>
 
       @if(auth()->check() && auth()->user()->hasRole('user'))
@@ -109,7 +109,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.1/dist/sweetalert2.all.min.js"></script>
 <script>
    $(document).ready(function () {
-   
+
     const baseUrl = document.querySelector('meta[name="baseUrl"]').getAttribute('content');
 
     $('.save_fav').off('click').on('click', function () {

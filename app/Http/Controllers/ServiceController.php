@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Service;
 use App\Models\User;
+use App\Models\Service;
 use App\Models\Setting;
-use App\Http\Requests\ServiceRequest;
+use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
+use Illuminate\Support\Facades\DB;
 use App\Models\UserFavouriteService;
+use App\Http\Requests\ServiceRequest;
+use App\Models\ProviderAddressMapping;
 
 class ServiceController extends Controller
 {
@@ -36,6 +38,18 @@ class ServiceController extends Controller
         $query = Service::query()->myService()->orderBy('created_at', 'desc');
 
         $filter = $request->filter;
+
+        $extract_arr = (auth()->user()->hasAnyRole(['admin'])) ?
+            ['action', 'status', 'check', 'name'] :
+            ['action', 'status', 'check', 'name', 'subscribe'];
+
+
+        if ($filter['column_status'] == null)
+            session()->put('all_services', false);
+        else
+            session()->put('all_services', true);
+
+        $query = Service::query()->myService();
 
         if (isset($filter)) {
             if (isset($filter['column_status'])) {
@@ -107,8 +121,24 @@ class ServiceController extends Controller
                         <label class="custom-control-label" for="' . $query->id . '" data-on-label="" data-off-label=""></label>
                     </div>
                 </div>';
+        })
+            ->addColumn('subscribe', function ($query) {
+                $exist = false;
+                $bg_color = '';
+                if (auth()->user()->hasAnyRole(['provider'])) {
+                    $provider_id = auth()->user()->id;
+                    $exist = $query->providerss()->where('provider_service.provider_id', $provider_id)->exists();
+                    $bg_color  = ($exist == true) ? 'bg-success' : '';
+                }
+                return '
+          <div class="custom-control custom-switch custom-switch-text custom-switch-color custom-control-inline">
+              <div class="custom-switch-inner">
+                  <input type="checkbox" class="custom-control-input ' . $bg_color . '" .    data-type="service_suscribe" ' . ($exist == true ? "checked" : "") . ' disabled value="' . $query->id . '" id="' . $query->id . '_' . '" data-id="' . $query->id . '_' . ' ">
+                  <label class="custom-control-label de" for="' . $query->id . '_' . '" data-on-label="" data-off-label=""></label>
+              </div>
+          </div>';
             })
-            ->rawColumns(['action', 'status', 'check', 'name'])
+            ->rawColumns($extract_arr)
             ->toJson();
     }
 
@@ -445,5 +475,83 @@ class ServiceController extends Controller
         $message = __('messages.delete_form', ['form' => __('messages.favourite')]);
 
         return  redirect()->back()->withSuccess($message);
+    }
+
+
+    /**
+     * @author Lee
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function subscriptionSerciceCreate(Request $request, $id)
+    {
+        $id = $request->id;
+
+        $auth_user = authSession();
+
+        $servicedata = Service::find($id);
+        $provider_service_adrress_mappings = $servicedata->providerAddressMappings
+            ->pluck('id')
+            ->implode(',');
+        $provider_address_mapping = ProviderAddressMapping::where('status', 1)
+            ->where('provider_id', $auth_user->id)
+            ->pluck('id')
+            ->implode(',');
+        $pageTitle = __('messages.subsctibe_to_service_form_title', ['form' => __('messages.service')]) . ' ' .  $servicedata->name;
+        return view(
+            'service.subcribe',
+            compact(
+                'auth_user',
+                'pageTitle',
+                'servicedata',
+                'provider_address_mapping',
+                'provider_service_adrress_mappings'
+            )
+        );
+    }
+
+    /**
+     * @author Lee
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function subscribeServiceByProvider(Request $request)
+    {
+        $service_id = $request->id;
+        $auth_user = auth()->user();
+        $user = User::find($auth_user->id);
+        $unsubscribe_service =  $request->enable_unsubscription_service;
+        $service = Service::find($service_id);
+
+        $user = auth()->user();
+        if ($user->user_type !== 'provider') {
+            abort(403);
+        }
+
+        // Obtenez les adresses sélectionnées par l'utilisateur
+        $provider_address_ids = $request->provider_address_id;
+        $addresses = (!empty($provider_address_ids) && $unsubscribe_service == null) ?
+            ProviderAddressMapping::whereIn('id', $provider_address_ids)->get() :
+            collect([]);
+
+        // Le fournisseur s'abonne au service en désignant les adresses
+        $service->subscribeToService($service, $user, $addresses);
+
+        $message = __('messages.servicesubscribe', ['form' => __('messages.service')]);
+        if (sizeof($service->providerAddressMappings()->where('provider_id', $user->id)->get()) <= 0) {
+            $message = __('messages.enable_unsubscription_service', ['form' => __('messages.service')]);
+        }
+
+        if ($request->is('api/*')) {
+            $response = [
+                'message' => $message,
+                'service_id' => $service->id
+            ];
+            return comman_custom_response($response);
+        }
+        return redirect(route('service.index'))->withSuccess($message);
     }
 }

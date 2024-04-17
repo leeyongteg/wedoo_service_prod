@@ -14,18 +14,21 @@ $auth_user = authSession();
                 <i class="far fa-trash-alt text-danger"></i>
             </a>
         @endif
-        {{-- {{ route('service.provide-subscription', ['id' => $data->id]) }} --}}
+
         @if (auth()->user()->hasAnyRole(['provider']))
-            <a class="mr-2" href="#"
+            <a class="mr-2" href="{{ route('service.provide-subscription', ['id' => $data->id]) }} "
                 title="{{ __('messages.add_form_title', ['form' => __('messages.servicesubscribe')]) }}"><i
                     class="fas fa-house-user text-primary"></i></a>
         @endif
+
         @if (auth()->user()->hasAnyRole(['admin', 'provider']))
             <a class="mr-2" href="{{ route('servicefaq.index', ['id' => $data->id]) }}"
                 title="{{ __('messages.add_form_title', ['form' => __('messages.servicefaq')]) }}"><i
                     class="fas fa-plus text-primary"></i></a>
         @endif
+
     @endif
+
     @if (auth()->user()->hasAnyRole(['admin']) && $data->trashed())
         <a href="{{ route('service.action', ['id' => $data->id, 'type' => 'restore']) }}"
             title="{{ __('messages.restore_form_title', ['form' => __('messages.service')]) }}"
@@ -42,5 +45,6 @@ $auth_user = authSession();
             <i class="far fa-trash-alt text-danger"></i>
         </a>
     @endif
+
 </div>
 {{ Form::close() }}

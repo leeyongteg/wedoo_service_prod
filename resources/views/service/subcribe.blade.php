@@ -17,7 +17,7 @@
             <div class="col-lg-12">
                 <div class="card">
                     <div class="card-body">
-                        {{ Form::model($servicedata, ['method' => 'POST', 'route' => ['service.provide-subscribe'], 'data-toggle' => 'validator', 'id' => 'service']) }}
+                        {{ Form::model($servicedata, ['method' => 'POST', 'route' => ['service.provider-subscribe'], 'data-toggle' => 'validator', 'id' => 'service']) }}
                         {{ Form::hidden('id') }}
                         <div class="row">
 
@@ -35,7 +35,9 @@
                                     {{ trans('messages.add_form_title', ['form' => trans('messages.provider_address')]) }}</a>
                             </div>
 
-                            @if (!sizeOf($servicedata->providerAddressMappings) == 0)
+                            @if (
+                                !sizeof(
+                                    $servicedata->providerAddressMappings()->where('provider_id', auth()->user()->id)->get()) <= 0)
                                 <div class="form-group col-md-3">
                                     <div class="custom-control custom-switch">
                                         {{ Form::checkbox('enable_unsubscription_service', $servicedata->is_enable_advance_payment, null, [
@@ -75,7 +77,6 @@
                         $('#provider_address_id').empty();
                         providerAddress(provider_id, provider_address_id);
                     })
-
                 })
 
                 function providerAddress(provider_id, provider_address_id = "", provider_service_adrress_mappings = "") {
@@ -97,8 +98,6 @@
                         }
                     });
                 }
-
-
             })(jQuery);
         </script>
     @endsection
