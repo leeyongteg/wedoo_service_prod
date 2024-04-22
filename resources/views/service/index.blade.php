@@ -118,12 +118,13 @@
                         name: 'name',
                         title: "{{ __('messages.name') }}"
                     },
-                    {
-                        data: 'provider_id',
-                        name: 'provider_id',
-                        title: "{{ __('messages.provider') }}"
-                    },
-                    {
+                    @if (auth()->user()->hasAnyRole(['admin']))
+                        {
+                            data: 'provider_id',
+                            name: 'provider_id',
+                            title: "{{ __('messages.provider') }}"
+                        },
+                    @endif {
                         data: 'category_id',
                         name: 'category_id',
                         title: "{{ __('messages.category') }}"

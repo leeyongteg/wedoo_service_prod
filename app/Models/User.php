@@ -231,16 +231,19 @@ class User extends Authenticatable implements HasMedia
 	{
 		return $this->hasMany(User::class, 'provider_id', 'id');
 	}
+	// @Fix @todo
+	// @author Lee
 	public function getServiceRating()
 	{
 		return $this->hasManyThrough(
 			BookingRating::class,
-			Service::class,
-			'provider_id', // services
-			'service_id', // booking rating
-			'id', // users
-			'id' // services
+			ProviderService::class,
+			'provider_id', // Foreign key on provider_services table
+			'service_id', // Foreign key on booking_ratings table
+			'id', // Local key on users table
+			'service_id' // Foreign key on provider_services table
 		);
+	
 	}
 
 	public function providerBooking()

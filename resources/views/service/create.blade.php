@@ -56,47 +56,7 @@
                                 ) }}
                             </div>
 
-                            @if (auth()->user()->hasAnyRole(['admin', 'demo_admin']))
-                                <div class="form-group col-md-4">
-                                    {{ Form::label('name', __('messages.select_name', ['select' => __('messages.provider')]) . ' <span class="text-danger">*</span>', ['class' => 'form-control-label'], false) }}
-                                    <br />
-                                    {{ Form::select(
-                                        'provider_id',
-                                        [optional($servicedata->providers)->id => optional($servicedata->providers)->display_name],
-                                        optional($servicedata->providers)->id,
-                                        [
-                                            'class' => 'select2js form-group',
-                                            'id' => 'provider_id',
-                                            'onchange' => 'selectprovider(this)',
-                                            'required',
-                                            'data-placeholder' => __('messages.select_name', ['select' => __('messages.provider')]),
-                                            'data-ajax--url' => route('ajax-list', ['type' => 'provider']),
-                                        ],
-                                    ) }}
-                                </div>
-                            @endif
-                            <div class="form-group col-md-4">
-                                {{ Form::label('name', __('messages.select_name', ['select' => __('messages.provider_address')]), ['class' => 'form-control-label'], false) }}
-                                <br />
-                                {{ Form::select('provider_address_id[]', [], old('provider_address_id'), [
-                                    'class' => 'select2js form-group provider_address_id',
-                                    'id' => 'provider_address_id',
-                                    'multiple' => 'multiple',
-                                    'data-placeholder' => __('messages.select_name', ['select' => __('messages.provider_address')]),
-                                ]) }}
 
-
-                                @if (auth()->user()->hasAnyRole(['provider']))
-                                    <a href="{{ route('provideraddress.create', ['provideraddress' => auth()->id()]) }}"
-                                        id="add_provider_address_link" class=""><i
-                                            class="fa fa-plus-circle mt-2"></i>
-                                        {{ trans('messages.add_form_title', ['form' => trans('messages.provider_address')]) }}</a>
-                                @else
-                                    <a href="#" id="add_provider_address_link" class=""><i
-                                            class="fa fa-plus-circle mt-2"></i>
-                                        {{ trans('messages.add_form_title', ['form' => trans('messages.provider_address')]) }}</a>
-                                @endif
-                            </div>
 
                             <div class="form-group col-md-4">
                                 {{ Form::label('type', __('messages.price_type') . ' <span class="text-danger">*</span>', ['class' => 'form-control-label'], false) }}

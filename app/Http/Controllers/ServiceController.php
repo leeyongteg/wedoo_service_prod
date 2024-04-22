@@ -14,544 +14,546 @@ use App\Models\ProviderAddressMapping;
 
 class ServiceController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index(Request $request)
-    {
-        $servicepackage = $request->packageid;
-        $postrequestid = $request->route('postjobid');
-        $filter = [
-            'status' => $request->status,
-        ];
-        $pageTitle = __('messages.list_form_title', ['form' => __('messages.service')]);
-        $auth_user = authSession();
-        $assets = ['datatable'];
-        return view('service.index', compact('pageTitle', 'auth_user', 'assets', 'filter', 'postrequestid', 'servicepackage'));
-    }
+	/**
+	 * Display a listing of the resource.
+	 *
+	 * @return \Illuminate\Http\Response
+	 */
+	public function index(Request $request)
+	{
+		$servicepackage = $request->packageid;
+		$postrequestid = $request->route('postjobid');
+		$filter = [
+			'status' => $request->status,
+		];
+		$pageTitle = __('messages.list_form_title', ['form' => __('messages.service')]);
+		$auth_user = authSession();
+		$assets = ['datatable'];
+		return view('service.index', compact('pageTitle', 'auth_user', 'assets', 'filter', 'postrequestid', 'servicepackage'));
+	}
 
-    // get datatable data
-    public function index_data(DataTables $datatable, Request $request)
-    {
-        $query = Service::query()->myService()->orderBy('created_at', 'desc');
+	// get datatable data
+	public function index_data(DataTables $datatable, Request $request)
+	{
+		$query = Service::query()->myService()->orderBy('created_at', 'desc');
 
-        $filter = $request->filter;
+		$filter = $request->filter;
 
-        $extract_arr = (auth()->user()->hasAnyRole(['admin'])) ?
-            ['action', 'status', 'check', 'name'] :
-            ['action', 'status', 'check', 'name', 'subscribe'];
+		$extract_arr = (auth()->user()->hasAnyRole(['admin'])) ?
+			['action', 'status', 'check', 'name', 'provider_id'] :
+			['action', 'status', 'check', 'name', 'subscribe'];
 
 
-        if ($filter['column_status'] == null)
-            session()->put('all_services', false);
-        else
-            session()->put('all_services', true);
+		if ($filter['column_status'] == null)
+			session()->put('all_services', false);
+		else
+			session()->put('all_services', true);
 
-        $query = Service::query()->myService();
+		$query = Service::query()->myService();
 
-        if (isset($filter)) {
-            if (isset($filter['column_status'])) {
-                $query->where('status', $filter['column_status']);
-            }
-        }
-        if (auth()->user()->hasAnyRole(['admin'])) {
-            $query = $query->where('service_type', 'service')->withTrashed();
-        }
-        if ($request->has('postrequestid')) {
-            $postRequestId = $request->postrequestid;
-            $query = Service::whereHas('postJobService', function ($query) use ($postRequestId) {
-                $query->where('post_request_id', $postRequestId);
-            });
-        }
-        if ($request->has('servicepackage')) {
-            $servicepackage = $request->servicepackage;
-            $query = Service::whereHas('servicePackage', function ($query) use ($servicepackage) {
-                $query->where('service_package_id', $servicepackage);
-            });
-        }
+		if (isset($filter)) {
+			if (isset($filter['column_status'])) {
+				$query->where('status', $filter['column_status']);
+			}
+		}
+		if (auth()->user()->hasAnyRole(['admin'])) {
+			$query = $query->where('service_type', 'service')->withTrashed();
+		}
+		if ($request->has('postrequestid')) {
+			$postRequestId = $request->postrequestid;
+			$query = Service::whereHas('postJobService', function ($query) use ($postRequestId) {
+				$query->where('post_request_id', $postRequestId);
+			});
+		}
+		if ($request->has('servicepackage')) {
+			$servicepackage = $request->servicepackage;
+			$query = Service::whereHas('servicePackage', function ($query) use ($servicepackage) {
+				$query->where('service_package_id', $servicepackage);
+			});
+		}
 
-        return $datatable->eloquent($query)
-            ->addColumn('check', function ($row) {
-                return '<input type="checkbox" class="form-check-input select-table-row"  id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" data-type="service" onclick="dataTableRowCheck(' . $row->id . ',this)">';
-            })
+		return $datatable->eloquent($query)
+			->addColumn('check', function ($row) {
+				return '<input type="checkbox" class="form-check-input select-table-row"  id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" data-type="service" onclick="dataTableRowCheck(' . $row->id . ',this)">';
+			})
+			->editColumn('name', function ($query) {
+				if (auth()->user()->can('service edit')) {
+					$link =  '<a class="btn-link btn-link-hover" href=' . route('service.create', ['id' => $query->id]) . '>' . $query->name . '</a>';
+				} else {
+					$link = $query->name;
+				}
+				return $link;
+			})
+			->editColumn('category_id', function ($query) {
+				return ($query->category_id != null && isset($query->category)) ? $query->category->name : '-';
+			})
+			->filterColumn('category_id', function ($query, $keyword) {
+				$query->whereHas('category', function ($q) use ($keyword) {
+					$q->where('name', 'like', '%' . $keyword . '%');
+				});
+			})
+			->addColumn('provider_id', function ($query) {
+				return view('service.service', compact('query'));
+			})
 
-            ->editColumn('name', function ($query) {
-                if (auth()->user()->can('service edit')) {
-                    $link =  '<a class="btn-link btn-link-hover" href=' . route('service.create', ['id' => $query->id]) . '>' . $query->name . '</a>';
-                } else {
-                    $link = $query->name;
-                }
-                return $link;
-            })
-            ->editColumn('category_id', function ($query) {
-                return ($query->category_id != null && isset($query->category)) ? $query->category->name : '-';
-            })
-            ->filterColumn('category_id', function ($query, $keyword) {
-                $query->whereHas('category', function ($q) use ($keyword) {
-                    $q->where('name', 'like', '%' . $keyword . '%');
-                });
-            })
-            ->editColumn('provider_id', function ($query) {
-                return view('service.service', compact('query'));
-            })
-            ->filterColumn('provider_id', function ($query, $keyword) {
-                $query->whereHas('providers', function ($q) use ($keyword) {
-                    $q->where('display_name', 'like', '%' . $keyword . '%');
-                });
-            })
-            ->editColumn('price', function ($query) {
-                return ($query->type !== 'fixed') ? getPriceFormat($query->price) . ' : ' . ucFirst($query->type)
-                    :  getPriceFormatOnlyWithEndZero($query->min_price_range) . ' - '
-                    . getPriceFormatOnlyWithEndZero($query->max_price_range) . ' '
-                    . getCurrencySymbol() . ' : ' . ucFirst($query->type);
-            })
-            ->editColumn('discount', function ($query) {
-                return $query->discount ? $query->discount . '%' : '-';
-            })
-            ->addColumn('action', function ($data) {
-                return view('service.action', compact('data'));
-            })
-            ->editColumn('status', function ($query) {
-                $disabled = $query->trashed() ? 'disabled' : '';
-                return '<div class="custom-control custom-switch custom-switch-text custom-switch-color custom-control-inline">
+			// @todo Changer le addColumn en editColumn et mettre a jour la relation whereHas('providers')
+
+			// ->filterColumn('provider_id', function ($query, $keyword) {
+			//   $query->whereHas('providers', function ($q) use ($keyword) {
+			//     $q->where('display_name', 'like', '%' . $keyword . '%');
+			//   });
+			// })
+			->editColumn('price', function ($query) {
+				return ($query->type !== 'fixed') ? getPriceFormat($query->price) . ' : ' . ucFirst($query->type)
+					:  getPriceFormatOnlyWithEndZero($query->min_price_range) . ' - '
+					. getPriceFormatOnlyWithEndZero($query->max_price_range) . ' '
+					. getCurrencySymbol() . ' : ' . ucFirst($query->type);
+			})
+			->editColumn('discount', function ($query) {
+				return $query->discount ? $query->discount . '%' : '-';
+			})
+			->addColumn('action', function ($data) {
+				return view('service.action', compact('data'));
+			})
+			->editColumn('status', function ($query) {
+				$disabled = $query->trashed() ? 'disabled' : '';
+				return '<div class="custom-control custom-switch custom-switch-text custom-switch-color custom-control-inline">
                     <div class="custom-switch-inner">
                         <input type="checkbox" class="custom-control-input  change_status" data-type="service_status" ' . ($query->status ? "checked" : "") . '  ' . $disabled . ' value="' . $query->id . '" id="' . $query->id . '" data-id="' . $query->id . '">
                         <label class="custom-control-label" for="' . $query->id . '" data-on-label="" data-off-label=""></label>
                     </div>
                 </div>';
-        })
-            ->addColumn('subscribe', function ($query) {
-                $exist = false;
-                $bg_color = '';
-                if (auth()->user()->hasAnyRole(['provider'])) {
-                    $provider_id = auth()->user()->id;
-                    $exist = $query->providerss()->where('provider_service.provider_id', $provider_id)->exists();
-                    $bg_color  = ($exist == true) ? 'bg-success' : '';
-                }
-                return '
+			})
+			->addColumn('subscribe', function ($query) {
+				$exist = false;
+				$bg_color = '';
+				if (auth()->user()->hasAnyRole(['provider'])) {
+					$provider_id = auth()->user()->id;
+					$exist = $query->providerss()->where('provider_service.provider_id', $provider_id)->exists();
+					$bg_color  = ($exist == true) ? 'bg-success' : '';
+				}
+				return '
           <div class="custom-control custom-switch custom-switch-text custom-switch-color custom-control-inline">
               <div class="custom-switch-inner">
                   <input type="checkbox" class="custom-control-input ' . $bg_color . '" .    data-type="service_suscribe" ' . ($exist == true ? "checked" : "") . ' disabled value="' . $query->id . '" id="' . $query->id . '_' . '" data-id="' . $query->id . '_' . ' ">
                   <label class="custom-control-label de" for="' . $query->id . '_' . '" data-on-label="" data-off-label=""></label>
               </div>
           </div>';
-            })
-            ->rawColumns($extract_arr)
-            ->toJson();
-    }
+			})
+			->rawColumns($extract_arr)
+			->toJson();
+	}
 
-    public function bulk_action(Request $request)
-    {
-        $ids = explode(',', $request->rowIds);
+	public function bulk_action(Request $request)
+	{
+		$ids = explode(',', $request->rowIds);
 
-        $actionType = $request->action_type;
+		$actionType = $request->action_type;
 
-        $message = 'Bulk Action Updated';
+		$message = 'Bulk Action Updated';
 
-
-        switch ($actionType) {
-            case 'change-status':
-                $branches = Service::whereIn('id', $ids)->update(['status' => $request->status]);
-                $message = 'Bulk Service Status Updated';
-                break;
-
-            case 'delete':
-                Service::whereIn('id', $ids)->delete();
-                $message = 'Bulk Service Deleted';
-                break;
-
-            case 'restore':
-                Service::whereIn('id', $ids)->restore();
-                $message = 'Bulk Service Restored';
-                break;
-
-            case 'permanently-delete':
-                Service::whereIn('id', $ids)->forceDelete();
-                $message = 'Bulk Service Permanently Deleted';
-                break;
-
-            default:
-                return response()->json(['status' => false, 'message' => 'Action Invalid']);
-                break;
-        }
-
-        return response()->json(['status' => true, 'message' => $message]);
-    }
-
-
-
-    /* user service list */
-    public function getUserServiceList(Request $request)
-    {
-        $filter = [
-            'status' => $request->status,
-        ];
-        $pageTitle = __('messages.list_form_title', ['form' => __('messages.service')]);
-        $auth_user = authSession();
-        $assets = ['datatable'];
-        return view('service.user_service_list', compact('pageTitle', 'auth_user', 'assets', 'filter'));
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create(Request $request)
-    {
-        $id = $request->id;
-
-        $auth_user = authSession();
-
-        $servicedata = Service::find($id);
-
-        $visittype = config('constant.VISIT_TYPE');
-
-        $settingdata = Setting::where('type', '=', 'service-configurations')->first();
-
-        $advancedPaymentSetting = 0;
-        $slotservice = 0;
-        $digital_services = 0;
-
-        if ($settingdata) {
-
-            $settings = json_decode($settingdata->value, true);
-
-            $advancedPaymentSetting = $settings['advance_payment'];
-            $slotservice = $settings['slot_service'];
-            $digital_services = $settings['digital_services'];
-        }
-
-        if ($digital_services == 1) {
-            $visittype = [
-                'ON_SITE' => 'On Site',
-                'ONLINE' => 'Online',
-            ];
-        } else {
-            $visittype = [
-                'ON_SITE' => 'On Site',
-            ];
-        }
-
-
-        $pageTitle = __('messages.update_form_title', ['form' => __('messages.service')]);
-
-        if ($servicedata == null) {
-            $pageTitle = __('messages.add_button_form', ['form' => __('messages.service')]);
-            $servicedata = new Service;
-        }
-
-        return view('service.create', compact('pageTitle', 'servicedata', 'auth_user', 'advancedPaymentSetting', 'visittype', 'slotservice'));
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(ServiceRequest $request)
-    {
-        if (demoUserPermission()) {
-            return  redirect()->back()->withErrors(trans('messages.demo_permission_denied'));
-        }
-
-        $services = $request->all();
-
-        $services['service_type'] = !empty($request->service_type) ? $request->service_type : 'service';
-        $services['provider_id'] = !empty($request->provider_id) ? $request->provider_id : auth()->user()->id;
-        if (auth()->user()->hasRole('user')) {
-            $services['service_type'] = 'user_post_service';
-        }
-
-        if ($request->id == null && default_earning_type() === 'subscription') {
-            $exceed =  get_provider_plan_limit($services['provider_id'], 'service');
-            if (!empty($exceed)) {
-                if ($exceed == 1) {
-                    $message = __('messages.limit_exceed', ['name' => __('messages.service')]);
-                } else {
-                    $message = __('messages.not_in_plan', ['name' => __('messages.service')]);
-                }
-                if ($request->is('api/*')) {
-                    return comman_message_response($message);
-                } else {
-                    return  redirect()->back()->withErrors($message);
-                }
-            }
-        }
-
-        if ($request->id == null) {
-            $services['added_by'] =  !empty($request->added_by) ? $request->added_by : auth()->user()->id;
-        }
-
-        $services['provider_id'] = !empty($services['provider_id']) ?  $services['provider_id']     : auth()->user()->id;
-        if (!empty($services['is_featured']) && $services['is_featured'] == 1) {
-            $exceed =  get_provider_plan_limit($services['provider_id'], 'featured_service');
-            if (!empty($exceed)) {
-                if ($exceed == 1) {
-                    $message = __('messages.limit_exceed', ['name' => __('messages.featured_service')]);
-                } else {
-                    $message = __('messages.not_in_plan', ['name' => __('messages.featured_service')]);
-                }
-                if ($request->is('api/*')) {
-                    return comman_message_response($message);
-                } else {
-                    return  redirect()->back()->withErrors($message);
-                }
-            }
-        }
-
-        if (!$request->is('api/*')) {
-            $services['is_featured'] = 0;
-            $services['is_slot'] = 0;
-            $services['is_enable_advance_payment'] = 0;
-
-            if ($request->has('is_featured')) {
-                $services['is_featured'] = 1;
-            }
-            if ($request->has('is_enable_advance_payment')) {
-                $services['is_enable_advance_payment'] = 1;
-            }
-            if ($request->has('is_slot')) {
-                $services['is_slot'] = 1;
-            }
-        }
-        if (!empty($request->advance_payment_amount)) {
-            $services['advance_payment_amount'] = $request->advance_payment_amount;
-        }
-        $result = Service::updateOrCreate(['id' => $request->id], $services);
-
-        if ($result->providerServiceAddress()->count() > 0) {
-            $result->providerServiceAddress()->delete();
-        }
-
-        if ($request->provider_address_id != null) {
-            foreach ($request->provider_address_id as $address) {
-                $provider_service_address = [
-                    'service_id'   => $result->id,
-                    'provider_address_id'   => $address,
-                ];
-                $result->providerServiceAddress()->insert($provider_service_address);
-            }
-        }
-
-        if ($request->is('api/*')) {
-            if ($request->has('attachment_count')) {
-                for ($i = 0; $i < $request->attachment_count; $i++) {
-                    $attachment = "service_attachment_" . $i;
-                    if ($request->$attachment != null) {
-                        $file[] = $request->$attachment;
-                    }
-                }
-                storeMediaFile($result, $file, 'service_attachment');
-            }
-        } else {
-            storeMediaFile($result, $request->service_attachment, 'service_attachment');
-        }
-        $message = __('messages.update_form', ['form' => __('messages.service')]);
-        if ($result->wasRecentlyCreated) {
-            $message = __('messages.save_form', ['form' => __('messages.service')]);
-        }
-
-        if ($request->is('api/*')) {
-            $response = [
-                'message' => $message,
-                'service_id' => $result->id
-            ];
-            return comman_custom_response($response);
-        }
-        return redirect(route('service.index'))->withSuccess($message);
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show(Request $request, $id)
-    {
-        $auth_user = authSession();
-        $tabpage = 'all-plan';
-        $providerdata = User::with('providerDocument')->where('user_type', 'provider')->where('id', $id)->first();
-        if (empty($providerdata)) {
-            $msg = __('messages.not_found_entry', ['name' => __('messages.provider')]);
-            return redirect(route('provider.index'))->withError($msg);
-        }
-        $pageTitle = __('messages.view_form_title', ['form' => __('messages.provider')]);
-
-        return view('service.view', compact('pageTitle', 'providerdata', 'auth_user', 'tabpage'));
-    }
-
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
-    {
-        if (demoUserPermission()) {
-            if (request()->is('api/*')) {
-                return comman_message_response(__('messages.demo_permission_denied'));
-            }
-            return  redirect()->back()->withErrors(trans('messages.demo_permission_denied'));
-        }
-        $service = Service::find($id);
-        $msg = __('messages.msg_fail_to_delete', ['item' => __('messages.service')]);
-
-        if ($service != '') {
-            $service->delete();
-            $msg = __('messages.msg_deleted', ['name' => __('messages.service')]);
-        }
-        if (request()->is('api/*')) {
-            return comman_custom_response(['message' => $msg, 'status' => true]);
-        }
-        return comman_custom_response(['message' => $msg, 'status' => true]);
-    }
-    public function action(Request $request)
-    {
-        $id = $request->id;
-        $service = Service::withTrashed()->where('id', $id)->first();
-        $msg = __('messages.not_found_entry', ['name' => __('messages.service')]);
-        if ($request->type === 'restore') {
-            $service->restore();
-            $msg = __('messages.msg_restored', ['name' => __('messages.service')]);
-        }
-
-        if ($request->type === 'forcedelete') {
-            $service->forceDelete();
-            $msg = __('messages.msg_forcedelete', ['name' => __('messages.service')]);
-        }
-
-        return comman_custom_response(['message' => $msg, 'status' => true]);
-    }
-
-    public function saveFavouriteService(Request $request)
-    {
-        $user_favourite = $request->all();
-
-        $result = UserFavouriteService::updateOrCreate(['id' => $request->id], $user_favourite);
-
-        $message = __('messages.update_form', ['form' => __('messages.favourite')]);
-        if ($result->wasRecentlyCreated) {
-            $message = __('messages.save_form', ['form' => __('messages.favourite')]);
-        }
-
-        return  redirect()->back()->withSuccess($message);
-    }
-
-    public function deleteFavouriteService(Request $request)
-    {
-
-        $service_rating = UserFavouriteService::where('user_id', $request->user_id)->where('service_id', $request->service_id)->delete();
-
-        $message = __('messages.delete_form', ['form' => __('messages.favourite')]);
-
-        return  redirect()->back()->withSuccess($message);
-    }
-
-
-    /**
-     * @author Lee
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function subscriptionSerciceCreate(Request $request, $id)
-    {
-        $id = $request->id;
-
-        $auth_user = authSession();
-
-        $servicedata = Service::find($id);
-        $provider_service_adrress_mappings = $servicedata->providerAddressMappings
-            ->pluck('id')
-            ->implode(',');
-        $provider_address_mapping = ProviderAddressMapping::where('status', 1)
-            ->where('provider_id', $auth_user->id)
-            ->pluck('id')
-            ->implode(',');
-        $pageTitle = __('messages.subsctibe_to_service_form_title', ['form' => __('messages.service')]) . ' ' .  $servicedata->name;
-        return view(
-            'service.subcribe',
-            compact(
-                'auth_user',
-                'pageTitle',
-                'servicedata',
-                'provider_address_mapping',
-                'provider_service_adrress_mappings'
-            )
-        );
-    }
-
-    /**
-     * @author Lee
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function subscribeServiceByProvider(Request $request)
-    {
-        $service_id = $request->id;
-        $auth_user = auth()->user();
-        $user = User::find($auth_user->id);
-        $unsubscribe_service =  $request->enable_unsubscription_service;
-        $service = Service::find($service_id);
-
-        $user = auth()->user();
-        if ($user->user_type !== 'provider') {
-            abort(403);
-        }
-
-        // Obtenez les adresses sélectionnées par l'utilisateur
-        $provider_address_ids = $request->provider_address_id;
-        $addresses = (!empty($provider_address_ids) && $unsubscribe_service == null) ?
-            ProviderAddressMapping::whereIn('id', $provider_address_ids)->get() :
-            collect([]);
-
-        // Le fournisseur s'abonne au service en désignant les adresses
-        $service->subscribeToService($service, $user, $addresses);
-
-        $message = __('messages.servicesubscribe', ['form' => __('messages.service')]);
-        if (sizeof($service->providerAddressMappings()->where('provider_id', $user->id)->get()) <= 0) {
-            $message = __('messages.enable_unsubscription_service', ['form' => __('messages.service')]);
-        }
-
-        if ($request->is('api/*')) {
-            $response = [
-                'message' => $message,
-                'service_id' => $service->id
-            ];
-            return comman_custom_response($response);
-        }
-        return redirect(route('service.index'))->withSuccess($message);
-    }
+
+		switch ($actionType) {
+			case 'change-status':
+				$branches = Service::whereIn('id', $ids)->update(['status' => $request->status]);
+				$message = 'Bulk Service Status Updated';
+				break;
+
+			case 'delete':
+				Service::whereIn('id', $ids)->delete();
+				$message = 'Bulk Service Deleted';
+				break;
+
+			case 'restore':
+				Service::whereIn('id', $ids)->restore();
+				$message = 'Bulk Service Restored';
+				break;
+
+			case 'permanently-delete':
+				Service::whereIn('id', $ids)->forceDelete();
+				$message = 'Bulk Service Permanently Deleted';
+				break;
+
+			default:
+				return response()->json(['status' => false, 'message' => 'Action Invalid']);
+				break;
+		}
+
+		return response()->json(['status' => true, 'message' => $message]);
+	}
+
+
+
+	/* user service list */
+	public function getUserServiceList(Request $request)
+	{
+		$filter = [
+			'status' => $request->status,
+		];
+		$pageTitle = __('messages.list_form_title', ['form' => __('messages.service')]);
+		$auth_user = authSession();
+		$assets = ['datatable'];
+		return view('service.user_service_list', compact('pageTitle', 'auth_user', 'assets', 'filter'));
+	}
+
+	/**
+	 * Show the form for creating a new resource.
+	 *
+	 * @return \Illuminate\Http\Response
+	 */
+	public function create(Request $request)
+	{
+		$id = $request->id;
+
+		$auth_user = authSession();
+
+		$servicedata = Service::find($id);
+
+		$visittype = config('constant.VISIT_TYPE');
+
+		$settingdata = Setting::where('type', '=', 'service-configurations')->first();
+
+		$advancedPaymentSetting = 0;
+		$slotservice = 0;
+		$digital_services = 0;
+
+		if ($settingdata) {
+
+			$settings = json_decode($settingdata->value, true);
+
+			$advancedPaymentSetting = $settings['advance_payment'];
+			$slotservice = $settings['slot_service'];
+			$digital_services = $settings['digital_services'];
+		}
+
+		if ($digital_services == 1) {
+			$visittype = [
+				'ON_SITE' => 'On Site',
+				'ONLINE' => 'Online',
+			];
+		} else {
+			$visittype = [
+				'ON_SITE' => 'On Site',
+			];
+		}
+
+
+		$pageTitle = __('messages.update_form_title', ['form' => __('messages.service')]);
+
+		if ($servicedata == null) {
+			$pageTitle = __('messages.add_button_form', ['form' => __('messages.service')]);
+			$servicedata = new Service;
+		}
+
+		return view('service.create', compact('pageTitle', 'servicedata', 'auth_user', 'advancedPaymentSetting', 'visittype', 'slotservice'));
+	}
+
+	/**
+	 * Store a newly created resource in storage.
+	 *
+	 * @param  \Illuminate\Http\Request  $request
+	 * @return \Illuminate\Http\Response
+	 */
+	public function store(ServiceRequest $request)
+	{
+		if (demoUserPermission()) {
+			return  redirect()->back()->withErrors(trans('messages.demo_permission_denied'));
+		}
+
+		$services = $request->all();
+
+		$services['service_type'] = !empty($request->service_type) ? $request->service_type : 'service';
+		$services['provider_id'] = !empty($request->provider_id) ? $request->provider_id : auth()->user()->id;
+		if (auth()->user()->hasRole('user')) {
+			$services['service_type'] = 'user_post_service';
+		}
+
+		if ($request->id == null && default_earning_type() === 'subscription') {
+			$exceed =  get_provider_plan_limit($services['provider_id'], 'service');
+			if (!empty($exceed)) {
+				if ($exceed == 1) {
+					$message = __('messages.limit_exceed', ['name' => __('messages.service')]);
+				} else {
+					$message = __('messages.not_in_plan', ['name' => __('messages.service')]);
+				}
+				if ($request->is('api/*')) {
+					return comman_message_response($message);
+				} else {
+					return  redirect()->back()->withErrors($message);
+				}
+			}
+		}
+
+		if ($request->id == null) {
+			$services['added_by'] =  !empty($request->added_by) ? $request->added_by : auth()->user()->id;
+		}
+
+		// $services['provider_id'] = !empty($services['provider_id']) ?  $services['provider_id']     : auth()->user()->id;
+		// if (!empty($services['is_featured']) && $services['is_featured'] == 1) {
+		//   $exceed =  get_provider_plan_limit($services['provider_id'], 'featured_service');
+		//   if (!empty($exceed)) {
+		//     if ($exceed == 1) {
+		//       $message = __('messages.limit_exceed', ['name' => __('messages.featured_service')]);
+		//     } else {
+		//       $message = __('messages.not_in_plan', ['name' => __('messages.featured_service')]);
+		//     }
+		//     if ($request->is('api/*')) {
+		//       return comman_message_response($message);
+		//     } else {
+		//       return  redirect()->back()->withErrors($message);
+		//     }
+		//   }
+		// }
+
+		if (!$request->is('api/*')) {
+			$services['is_featured'] = 0;
+			$services['is_slot'] = 0;
+			$services['is_enable_advance_payment'] = 0;
+
+			if ($request->has('is_featured')) {
+				$services['is_featured'] = 1;
+			}
+			if ($request->has('is_enable_advance_payment')) {
+				$services['is_enable_advance_payment'] = 1;
+			}
+			if ($request->has('is_slot')) {
+				$services['is_slot'] = 1;
+			}
+		}
+		if (!empty($request->advance_payment_amount)) {
+			$services['advance_payment_amount'] = $request->advance_payment_amount;
+		}
+		$result = Service::updateOrCreate(['id' => $request->id], $services);
+
+		if ($result->providerServiceAddress()->count() > 0) {
+			$result->providerServiceAddress()->delete();
+		}
+
+		if ($request->provider_address_id != null) {
+			foreach ($request->provider_address_id as $address) {
+				$provider_service_address = [
+					'service_id'   => $result->id,
+					'provider_address_id'   => $address,
+				];
+				$result->providerServiceAddress()->insert($provider_service_address);
+			}
+		}
+
+		if ($request->is('api/*')) {
+			if ($request->has('attachment_count')) {
+				for ($i = 0; $i < $request->attachment_count; $i++) {
+					$attachment = "service_attachment_" . $i;
+					if ($request->$attachment != null) {
+						$file[] = $request->$attachment;
+					}
+				}
+				storeMediaFile($result, $file, 'service_attachment');
+			}
+		} else {
+			storeMediaFile($result, $request->service_attachment, 'service_attachment');
+		}
+		$message = __('messages.update_form', ['form' => __('messages.service')]);
+		if ($result->wasRecentlyCreated) {
+			$message = __('messages.save_form', ['form' => __('messages.service')]);
+		}
+
+		if ($request->is('api/*')) {
+			$response = [
+				'message' => $message,
+				'service_id' => $result->id
+			];
+			return comman_custom_response($response);
+		}
+		return redirect(route('service.index'))->withSuccess($message);
+	}
+
+	/**
+	 * Display the specified resource.
+	 *
+	 * @param  int  $id
+	 * @return \Illuminate\Http\Response
+	 */
+	public function show(Request $request, $id)
+	{
+		$auth_user = authSession();
+		$tabpage = 'all-plan';
+		$providerdata = User::with('providerDocument')->where('user_type', 'provider')->where('id', $id)->first();
+		if (empty($providerdata)) {
+			$msg = __('messages.not_found_entry', ['name' => __('messages.provider')]);
+			return redirect(route('provider.index'))->withError($msg);
+		}
+		$pageTitle = __('messages.view_form_title', ['form' => __('messages.provider')]);
+
+		return view('service.view', compact('pageTitle', 'providerdata', 'auth_user', 'tabpage'));
+	}
+
+
+	/**
+	 * Show the form for editing the specified resource.
+	 *
+	 * @param  int  $id
+	 * @return \Illuminate\Http\Response
+	 */
+	public function edit($id)
+	{
+		//
+	}
+
+	/**
+	 * Update the specified resource in storage.
+	 *
+	 * @param  \Illuminate\Http\Request  $request
+	 * @param  int  $id
+	 * @return \Illuminate\Http\Response
+	 */
+	public function update(Request $request, $id)
+	{
+		//
+	}
+
+	/**
+	 * Remove the specified resource from storage.
+	 *
+	 * @param  int  $id
+	 * @return \Illuminate\Http\Response
+	 */
+	public function destroy($id)
+	{
+		if (demoUserPermission()) {
+			if (request()->is('api/*')) {
+				return comman_message_response(__('messages.demo_permission_denied'));
+			}
+			return  redirect()->back()->withErrors(trans('messages.demo_permission_denied'));
+		}
+		$service = Service::find($id);
+		$msg = __('messages.msg_fail_to_delete', ['item' => __('messages.service')]);
+
+		if ($service != '') {
+			$service->delete();
+			$msg = __('messages.msg_deleted', ['name' => __('messages.service')]);
+		}
+		if (request()->is('api/*')) {
+			return comman_custom_response(['message' => $msg, 'status' => true]);
+		}
+		return comman_custom_response(['message' => $msg, 'status' => true]);
+	}
+	public function action(Request $request)
+	{
+		$id = $request->id;
+		$service = Service::withTrashed()->where('id', $id)->first();
+		$msg = __('messages.not_found_entry', ['name' => __('messages.service')]);
+		if ($request->type === 'restore') {
+			$service->restore();
+			$msg = __('messages.msg_restored', ['name' => __('messages.service')]);
+		}
+
+		if ($request->type === 'forcedelete') {
+			$service->forceDelete();
+			$msg = __('messages.msg_forcedelete', ['name' => __('messages.service')]);
+		}
+
+		return comman_custom_response(['message' => $msg, 'status' => true]);
+	}
+
+	public function saveFavouriteService(Request $request)
+	{
+		$user_favourite = $request->all();
+
+		$result = UserFavouriteService::updateOrCreate(['id' => $request->id], $user_favourite);
+
+		$message = __('messages.update_form', ['form' => __('messages.favourite')]);
+		if ($result->wasRecentlyCreated) {
+			$message = __('messages.save_form', ['form' => __('messages.favourite')]);
+		}
+
+		return  redirect()->back()->withSuccess($message);
+	}
+
+	public function deleteFavouriteService(Request $request)
+	{
+
+		$service_rating = UserFavouriteService::where('user_id', $request->user_id)->where('service_id', $request->service_id)->delete();
+
+		$message = __('messages.delete_form', ['form' => __('messages.favourite')]);
+
+		return  redirect()->back()->withSuccess($message);
+	}
+
+
+	/**
+	 * @author Lee
+	 * Show the form for creating a new resource.
+	 *
+	 * @return \Illuminate\Http\Response
+	 */
+	public function subscriptionSerciceCreate(Request $request, $id)
+	{
+		$id = $request->id;
+
+		$auth_user = authSession();
+
+		$servicedata = Service::find($id);
+		$provider_service_adrress_mappings = $servicedata->providerAddressMappings
+			->pluck('id')
+			->implode(',');
+		$provider_address_mapping = ProviderAddressMapping::where('status', 1)
+			->where('provider_id', $auth_user->id)
+			->pluck('id')
+			->implode(',');
+		$pageTitle = __('messages.subsctibe_to_service_form_title', ['form' => __('messages.service')]) . ' ' .  $servicedata->name;
+		return view(
+			'service.subcribe',
+			compact(
+				'auth_user',
+				'pageTitle',
+				'servicedata',
+				'provider_address_mapping',
+				'provider_service_adrress_mappings'
+			)
+		);
+	}
+
+	/**
+	 * @author Lee
+	 * Store a newly created resource in storage.
+	 *
+	 * @param  \Illuminate\Http\Request  $request
+	 * @return \Illuminate\Http\Response
+	 */
+	public function subscribeServiceByProvider(Request $request)
+	{
+		$service_id = $request->id;
+		$auth_user = auth()->user();
+		$user = User::find($auth_user->id);
+		$unsubscribe_service =  $request->enable_unsubscription_service;
+		$service = Service::find($service_id);
+
+		$user = auth()->user();
+		if ($user->user_type !== 'provider') {
+			abort(403);
+		}
+
+		// Obtenez les adresses sélectionnées par l'utilisateur
+		$provider_address_ids = $request->provider_address_id;
+		$addresses = (!empty($provider_address_ids) && $unsubscribe_service == null) ?
+			ProviderAddressMapping::whereIn('id', $provider_address_ids)->get() :
+			collect([]);
+
+		// Le fournisseur s'abonne au service en désignant les adresses
+		$service->subscribeToService($service, $user, $addresses);
+
+		$message = __('messages.servicesubscribe', ['form' => __('messages.service')]);
+		if (sizeof($service->providerAddressMappings()->where('provider_id', $user->id)->get()) <= 0) {
+			$message = __('messages.enable_unsubscription_service', ['form' => __('messages.service')]);
+		}
+
+		if ($request->is('api/*')) {
+			$response = [
+				'message' => $message,
+				'service_id' => $service->id
+			];
+			return comman_custom_response($response);
+		}
+		return redirect(route('service.index'))->withSuccess($message);
+	}
 }
