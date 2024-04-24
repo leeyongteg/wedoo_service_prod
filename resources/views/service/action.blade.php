@@ -2,10 +2,10 @@
 $auth_user = authSession();
 ?>
 {{ Form::open(['route' => ['service.destroy', $data->id], 'method' => 'delete', 'data--submit' => 'service' . $data->id]) }}
-<div class="d-flex justify-content-end align-items-center">
+<div class="d-flex justify-content-center align-items-center">
     @if (!$data->trashed())
 
-        @if ($auth_user->can('service delete'))
+        @if (auth()->user()->hasAnyRole(['admin']))
             <a class="mr-2" href="{{ route('service.destroy', $data->id) }}" data--submit="service{{ $data->id }}"
                 data--confirmation='true' data--ajax="true" data-datatable="reload"
                 data-title="{{ __('messages.delete_form_title', ['form' => __('messages.service')]) }}"
@@ -21,7 +21,7 @@ $auth_user = authSession();
                     class="fas fa-house-user text-primary"></i></a>
         @endif
 
-        @if (auth()->user()->hasAnyRole(['admin', 'provider']))
+        @if (auth()->user()->hasAnyRole(['admin']))
             <a class="mr-2" href="{{ route('servicefaq.index', ['id' => $data->id]) }}"
                 title="{{ __('messages.add_form_title', ['form' => __('messages.servicefaq')]) }}"><i
                     class="fas fa-plus text-primary"></i></a>

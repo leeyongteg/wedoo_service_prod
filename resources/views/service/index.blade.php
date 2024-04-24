@@ -57,7 +57,7 @@
 
                     </form>
                 </div>
-                <div class="d-flex justify-content-end">
+                <div class="d-flex justify-content-end ">
                     <div class="datatable-filter col-5 ml-auto">
                         <select name="column_status" id="column_status" class="select2 form-control"
                             data-filter="select" style="width: 100%">
@@ -74,7 +74,6 @@
                             aria-describedby="addon-wrapping" aria-controls="dataTableBuilder">
                     </div>
                 </div>
-
                 <div class="table-responsive">
                     <table id="datatable" class="table-striped table border">
 
