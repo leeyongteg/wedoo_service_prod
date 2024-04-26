@@ -185,7 +185,7 @@ class BookingController extends Controller
   {
     $id = $request->id;
     $auth_user = authSession();
-
+    
     $bookingdata = Booking::find($id);
     $pageTitle = __('messages.update_form_title', ['form' => __('messages.booking')]);
 
@@ -518,10 +518,8 @@ class BookingController extends Controller
     }
     $message = __('messages.update_form', ['form' => __('messages.booking')]);
 
-    if ($request->is('api/*')) {
-
-      return comman_message_response($message);
-    }
+    if ($request->is('api/*'))
+    return comman_message_response($message);
 
     return  redirect(route('booking.index'))->withSuccess($message);
   }
@@ -629,6 +627,7 @@ class BookingController extends Controller
 
     return comman_custom_response(['message' => $msg, 'status' => true]);
   }
+
   public function bookingDetails(Request $request, $id)
   {
     $auth_user = authSession();
@@ -721,6 +720,7 @@ class BookingController extends Controller
     $pageTitle = __('messages.booking');
     return view('booking.details', compact('pageTitle', 'earningData', 'auth_user', 'providerdata'));
   }
+
   public function bookingstatus(Request $request, $id)
   {
     $tabpage = $request->tabpage;
@@ -741,6 +741,7 @@ class BookingController extends Controller
     }
     return response()->json($data);
   }
+
   public function createPDF($id)
   {
     $data = AppSetting::take(1)->first();
@@ -771,12 +772,12 @@ class BookingController extends Controller
     $result = BookingRating::updateOrCreate(['id' => $request->id], $rating_data);
 
     $message = __('messages.update_form', ['form' => __('messages.rating')]);
-    if ($result->wasRecentlyCreated) {
+    if ($result->wasRecentlyCreated)
       $message = __('messages.save_form', ['form' => __('messages.rating')]);
-    }
 
     return  redirect()->back()->withSuccess($message);
   }
+
   public function getPaymentMethod(Request $request)
   {
     $data = $request->all();
@@ -811,7 +812,6 @@ class BookingController extends Controller
 
     return comman_custom_response($data);
   }
-
 
   public function createStripePayment(Request $request)
   {
