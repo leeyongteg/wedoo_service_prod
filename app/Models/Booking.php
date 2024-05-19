@@ -291,14 +291,12 @@ class Booking extends Model
 					$taxValue += $tax['value'];
 				}
 			}
-		}
-
+    }
 		return $taxValue;
 	}
 	public function getTotalValue(): float
 	{
-		$grandTotalAmount =  $this->getSubTotalValue()  + $this->getTaxesValue() + $this->getExtraChargeValue();
-
+    $grandTotalAmount =  $this->getSubTotalValue()  + $this->getTaxesValue() + $this->getExtraChargeValue();
 		return $grandTotalAmount;
 	}
 	public function getServiceAddonValue(): float

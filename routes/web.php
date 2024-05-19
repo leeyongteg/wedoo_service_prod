@@ -211,6 +211,10 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
 	Route::get('booking-assign-provider-form/{id}', [BookingController::class, 'bookingAssignProviderForm'])->name('booking.assign_provider_form');
 	Route::post('booking-assigned-provider', [BookingController::class, 'bookingAssignedProvider'])->name('booking.assigned_provider');
 
+    //Admin define service price @Lee
+    Route::post('define_price/booking', [BookingController::class, 'definePriceForFixedService'])->name('booking.define_price');
+    Route::get('define_price/booking-form/{id}', [BookingController::class, 'definePriceForFixedServiceForm'])->name('booking.define_price_form');
+
 	// Setting
 	Route::get('setting/{page?}', [SettingController::class, 'settings'])->name('setting.index');
 	Route::post('/layout-page', [SettingController::class, 'layoutPage'])->name('layout_page');
