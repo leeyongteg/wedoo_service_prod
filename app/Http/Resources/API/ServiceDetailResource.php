@@ -25,6 +25,8 @@ class ServiceDetailResource extends JsonResource
             'subcategory_id'   => $this->subcategory_id,
             'provider_id'   => $this->provider_id,
             'price'         => $this->price,
+            'min_price_range'         => $this->min_price_range,
+            'max_price_range'         => $this->max_price_range,
             'price_format'  => getPriceFormat($this->price),
             'type'          => $this->type,
             'discount'      => $this->discount,

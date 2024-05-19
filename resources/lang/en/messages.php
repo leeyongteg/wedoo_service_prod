@@ -18,6 +18,9 @@ return [
     'enable_unsubscription_service' => 'Unsubscribe to the service',
     'my_services' => 'My services',
     'subsctibe_to_service_form_title' => 'Subscribe to servive : ',
+    'total' => 'Total',
+    'define_price_title' => 'Define service price',
+
     // End
     'user' => 'User',
     'user_information' => 'User Information',

@@ -18,6 +18,9 @@ return [
     'enable_unsubscription_service' => 'Se désabonner au service',
     'my_services' => 'Mes services',
     'subsctibe_to_service_form_title' => 'Souscrire au service : ',
+    'total' => 'Total',
+    'define_price_title' => 'Definir le prix du service',
+
     // End
     'user' => 'Utilisateur',
     'user_information' => 'Informations sur l\'utilisateur',
