@@ -352,7 +352,7 @@ class BookingController extends Controller
    */
   public function show($id)
   {
-        $auth_user = authSession();
+    $auth_user = authSession();
     $user = auth()->user();
     $user->last_notification_seen = now();
     $user->save();
@@ -371,7 +371,7 @@ class BookingController extends Controller
       }
     }
 
-        $bookingdata = Booking::with('bookingExtraCharge', 'payment')->myBooking()->find($id);
+    $bookingdata = Booking::with('bookingExtraCharge', 'payment')->myBooking()->find($id);
     $tabpage = 'info';
     if (empty($bookingdata)) {
       $msg = __('messages.not_found_entry', ['name' => __('messages.booking')]);
@@ -438,7 +438,7 @@ class BookingController extends Controller
       if ($validator->fails())
         return redirect()->back()->withErrors($validator)->withInput();
       $data['price'] = ($validator->validated())['price'];
-            $data['amount'] =  $data['price'];
+      $data['amount'] =  $data['price'];
     }
 
     if ($data['status'] === 'hold') {
@@ -460,15 +460,17 @@ class BookingController extends Controller
         }
       }
     }
+
     if ($bookingdata->status != $data['status']) {
       $activity_type = 'update_booking_status';
     }
+
     if ($data['status'] == 'cancelled') {
       $activity_type = 'cancel_booking';
     }
 
     /** @Lee */
-        if ($bookingdata->service->type == 'fixed') {
+    if ($bookingdata->service->type == 'fixed' && $bookingdata->price == null) {
       $bookingdata->update([
         'price' => $request->price,
         'amount' => $request->price
@@ -828,9 +830,8 @@ class BookingController extends Controller
 
   public function saveStripePayment(Request $request, $id)
   {
-
-        $type = $request->type;
-        $result = Payment::where('booking_id', $id)->first();
+    $type = $request->type;
+    $result = Payment::where('booking_id', $id)->first();
     $stripe_session_id = $result->other_transaction_detail;
     $payment_type = $result->payment_type;
 
@@ -927,13 +928,13 @@ class BookingController extends Controller
   public function bookingAssignedProvider(Request $request)
   {
 
-        $data = $request->validate([
-            'provider_id' => 'required|exists:users,id', // S'assurer que le provider_id existe dans la table des utilisateurs
-        ]);
+    $data = $request->validate([
+      'provider_id' => 'required|exists:users,id', // S'assurer que le provider_id existe dans la table des utilisateurs
+    ]);
 
-        //@todo Activity type verification
-        $bookingdata =  Booking::findOrFail($request->id);
-        $provider = User::findOrFail($data['provider_id']);
+    //@todo Activity type verification
+    $bookingdata =  Booking::findOrFail($request->id);
+    $provider = User::findOrFail($data['provider_id']);
 
     $assigned_provider_ids = [];
     if ($bookingdata->providerAdded()->count() > 0) {
@@ -954,8 +955,8 @@ class BookingController extends Controller
         ->delete();
     }
 
-        $bookingdata->provider()->associate($provider);
-        $bookingdata->status = 'pending';
+    $bookingdata->provider()->associate($provider);
+    $bookingdata->status = 'pending';
     $bookingdata->save();
 
     $activity_data = [
@@ -970,77 +971,77 @@ class BookingController extends Controller
       return comman_message_response($message);
     }
 
-        return response()
-            ->json([
-                'status' => true,
-                'event' => 'callback',
-                'message' => $message,
-            ]);
+    return response()
+      ->json([
+        'status' => true,
+        'event' => 'callback',
+        'message' => $message,
+      ]);
+  }
+
+
+
+  /**
+   * @Lee
+   *
+   * @param Request $request
+   * @return void
+   */
+  public function  definePriceForFixedServiceForm(Request $request)
+  {
+    $bookingdata = Booking::find($request->id);
+    $pageTitle = __('messages.define_price_title', ['form' => __('messages.define_price_title')]);
+    return view('booking.define_price_from_fixed_service', compact('bookingdata', 'pageTitle'));
+  }
+
+  /**
+   * Update the specified resource in storage.
+   *
+   * @param  \Illuminate\Http\Request  $request
+   * @param  int  $id
+   * @return \Illuminate\Http\Response
+   */
+  public function definePriceForFixedService(Request $request)
+  {
+    $bookingdata = Booking::find($request->id);
+
+    if ($request->has('price')) {
+      $validator = Validator::make($request->all(), [
+        'price' => 'required|numeric|min:' . $bookingdata->service->min_price_range . '|max:' . $bookingdata->service->max_price_range,
+      ]);
+
+      if ($validator->fails())
+        return redirect()->back()->withErrors($validator)->withInput();
+      $price = ($validator->validated())['price'];
+
+      $bookingdata->update([
+        'price' => $price,
+        'amount' => $price,
+        'status' => 'accept'
+      ]);
+
+      $activity_type = 'update_booking_status';
+      $activity_data = [
+        'activity_type' => $activity_type,
+        'booking_id' => $bookingdata->id,
+        'booking' => $bookingdata,
+      ];
+      $this->sendNotification($activity_data);
+
+      $calculateFinalPriceElement = $this->calcutateFinalPrice($bookingdata, true, '');
+      $bookingdata->update($calculateFinalPriceElement);
     }
 
+    $message = __('messages.update_form', ['form' => __('messages.booking')]);
 
+    if ($request->is('api/*'))
+    return comman_message_response($message);
 
-    /**
-     * @Lee
-     *
-     * @param Request $request
-     * @return void
-     */
-    public function  definePriceForFixedServiceForm(Request $request)
-    {
-        $bookingdata = Booking::find($request->id);
-        $pageTitle = __('messages.define_price_title', ['form' => __('messages.define_price_title')]);
-        return view('booking.define_price_from_fixed_service', compact('bookingdata', 'pageTitle'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function definePriceForFixedService(Request $request)
-    {
-        $bookingdata = Booking::find($request->id);
-
-        if ($request->has('price')) {
-            $validator = Validator::make($request->all(), [
-                'price' => 'required|numeric|min:' . $bookingdata->service->min_price_range . '|max:' . $bookingdata->service->max_price_range,
-            ]);
-
-            if ($validator->fails())
-                return redirect()->back()->withErrors($validator)->withInput();
-            $price = ($validator->validated())['price'];
-
-            $bookingdata->update([
-                'price' => $price,
-                'amount' => $price,
-                'status' => 'accept'
-            ]);
-
-            $activity_type = 'update_booking_status';
-            $activity_data = [
-                'activity_type' => $activity_type,
-                'booking_id' => $bookingdata->id,
-                'booking' => $bookingdata,
-            ];
-            $this->sendNotification($activity_data);
-
-            $calculateFinalPriceElement = $this->calcutateFinalPrice($bookingdata, true, '');
-            $bookingdata->update($calculateFinalPriceElement);
-        }
-
-        $message = __('messages.update_form', ['form' => __('messages.booking')]);
-
-        if ($request->is('api/*'))
-        return comman_message_response($message);
-
-        return response()
-            ->json([
-                'status' => true,
-                'event' => 'callback',
-                'message' => $message,
-            ]);
+    return response()
+      ->json([
+        'status' => true,
+        'event' => 'callback',
+        'message' => $message,
+      ]);
   }
 }
