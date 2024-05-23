@@ -16,393 +16,367 @@ use App\Traits\NotificationTrait;
 
 class ProviderPayoutController extends Controller
 {
-    use NotificationTrait;
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
-    {
-
-    }
-
-    public function index_data(DataTables $datatable,Request $request)
-    {
-        $id = $request->id;
-        $query = ProviderPayout::where('provider_id',$id);
-        $filter = $request->filter;
-
-        if (isset($filter)) {
-            if (isset($filter['column_status'])) {
-                $query->where('status', $filter['column_status']);
-            }
-        }
-        if (auth()->user()->hasAnyRole(['admin'])) {
-            $query->newquery();
-        }
-
-        return $datatable->eloquent($query)
-        ->addColumn('check', function ($row) {
-            return '<input type="checkbox" class="form-check-input select-table-row"  id="datatable-row-'.$row->id.'"  name="datatable_ids[]" value="'.$row->id.'" onclick="dataTableRowCheck('.$row->id.')">';
-        })
-        ->editColumn('payment_method', function($payout) {
-            return !empty($payout->payment_method) ? $payout->payment_method : 'cash';
-        })
-        ->addColumn('bank_name', function($payout) {
-
-            if($payout->payment_method == 'bank'){
-                $bank = Bank::where('id',$payout->bank_id)->value('bank_name');
-                return $bank;
-            }
-            else{
-                return '-';
-            }
-
-            })
-        ->editColumn('description', function($payout) {
-            return !empty($payout->description) ? $payout->description : '-';
-        })
-
-        ->editColumn('provider_id', function ($payout) {
-            return view('providerpayout.user', compact('payout'));
-        })
-
-        ->filterColumn('provider_id',function($payout,$keyword){
-            $payout->whereHas('providers',function ($q) use($keyword){
-                $q->where('first_name','like','%'.$keyword.'%');
-            });
-        })
-        ->editColumn('amount', function($payout) {
-            return ($payout->amount != null && isset($payout->amount)) ? getPriceFormat($payout->amount) : '-';
-        })
-        ->editColumn('created_at', function($payout) {
-            return $payout->created_at;
-        })
-        ->addColumn('action', function($providerpayout){
-            return view('providerpayout.action',compact('providerpayout'))->render();
-        })
-        ->addIndexColumn()
-        ->rawColumns(['check','title','action','status','bank_name'])
-            ->toJson();
-    }
-
-    /* bulck action method */
-    public function bulk_action(Request $request)
-    {
-        $ids = explode(',', $request->rowIds);
-
-        $actionType = $request->action_type;
-
-        $message = 'Bulk Action Updated';
-
-        switch ($actionType) {
-            case 'change-status':
-                $branches = ProviderPayout::whereIn('id', $ids)->update(['status' => $request->status]);
-                $message = 'Bulk Provider Payout Status Updated';
-                break;
-
-            case 'delete':
-                ProviderPayout::whereIn('id', $ids)->delete();
-                $message = 'Bulk Provider Payout Deleted';
-                break;
+	use NotificationTrait;
+	/**
+	 * Display a listing of the resource.
+	 *
+	 * @return \Illuminate\Http\Response
+	 */
+	public function index()
+	{
+	}
+
+	public function index_data(DataTables $datatable, Request $request)
+	{
+		$id = $request->id;
+		$query = ProviderPayout::where('provider_id', $id);
+		$filter = $request->filter;
+
+		if (isset($filter)) {
+			if (isset($filter['column_status'])) {
+				$query->where('status', $filter['column_status']);
+			}
+		}
+		if (auth()->user()->hasAnyRole(['admin'])) {
+			$query->newquery();
+		}
+
+		return $datatable->eloquent($query)
+			->addColumn('check', function ($row) {
+			return '<input type="checkbox" class="form-check-input select-table-row"  id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" onclick="dataTableRowCheck(' . $row->id . ')">';
+		})
+			->editColumn('payment_method', function ($payout) {
+				return !empty($payout->payment_method) ? $payout->payment_method : 'cash';
+			})
+			->addColumn('bank_name', function ($payout) {
+
+			if ($payout->payment_method == 'bank') {
+				$bank = Bank::where('id', $payout->bank_id)->value('bank_name');
+				return $bank;
+			} else {
+				return '-';
+			}
+		})
+			->editColumn('description', function ($payout) {
+				return !empty($payout->description) ? $payout->description : '-';
+			})
+
+			->editColumn('provider_id', function ($payout) {
+				return view('providerpayout.user', compact('payout'));
+			})
+
+			->filterColumn('provider_id', function ($payout, $keyword) {
+				$payout->whereHas('providers', function ($q) use ($keyword) {
+					$q->where('first_name', 'like', '%' . $keyword . '%');
+				});
+			})
+			->editColumn('amount', function ($payout) {
+				return ($payout->amount != null && isset($payout->amount)) ? getPriceFormat($payout->amount) : '-';
+			})
+			->editColumn('created_at', function ($payout) {
+				return $payout->created_at;
+			})
+			->addColumn('action', function ($providerpayout) {
+				return view('providerpayout.action', compact('providerpayout'))->render();
+			})
+			->addIndexColumn()
+			->rawColumns(['check', 'title', 'action', 'status', 'bank_name'])
+			->toJson();
+	}
+
+	/* bulck action method */
+	public function bulk_action(Request $request)
+	{
+		$ids = explode(',', $request->rowIds);
+
+		$actionType = $request->action_type;
+
+		$message = 'Bulk Action Updated';
+
+		switch ($actionType) {
+			case 'change-status':
+				$branches = ProviderPayout::whereIn('id', $ids)->update(['status' => $request->status]);
+				$message = 'Bulk Provider Payout Status Updated';
+				break;
+
+			case 'delete':
+				ProviderPayout::whereIn('id', $ids)->delete();
+				$message = 'Bulk Provider Payout Deleted';
+				break;
+
+			default:
+				return response()->json(['status' => false, 'message' => 'Action Invalid']);
+				break;
+		}
+
+		return response()->json(['status' => true, 'message' => $message]);
+	}
+
+	/**
+	 * Show the form for creating a new resource.
+	 *
+	 * @return \Illuminate\Http\Response
+	 */
+	public function create($id)
+	{
 
-            default:
-                return response()->json(['status' => false, 'message' => 'Action Invalid']);
-                break;
-        }
+		$auth_user = authSession();
+		$pageTitle = trans('messages.add_button_form', ['form' => trans('messages.provider_payout')]);
+		$payoutdata = new ProviderPayout;
 
-        return response()->json(['status' => true, 'message' =>$message]);
-    }
+		$provider = User::with('providertype')->find($id);
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create($id)
-    {
+		$bookings = Booking::where('provider_id', $id)->whereNotNull('payment_id')->get();
 
-        $auth_user = authSession();
-        $pageTitle = trans('messages.add_button_form',['form' => trans('messages.provider_payout')]);
-        $payoutdata = new ProviderPayout;
+		$providerEarning = ProviderPayout::where('provider_id', $id)->sum('amount');
 
-        $provider = User::with('providertype')->find($id);
+		$provider_commission = optional($provider->providertype)->commission;
 
-        $bookings = Booking::where('provider_id',$id)->whereNotNull('payment_id')->get();
+		$provider_type = optional($provider->providertype)->type;
 
-        $providerEarning = ProviderPayout::where('provider_id',$id)->sum('amount');
+		$booking_data = get_provider_commission($bookings);
 
-        $provider_commission = optional($provider->providertype)->commission;
+		$provider_earning = calculate_commission($booking_data['total_amount'], $provider_commission, $provider_type, 'provider', $providerEarning, $bookings->count());
 
-        $provider_type = optional($provider->providertype)->type;
+		if ($provider_earning['number_format'] <= 0) {
+			if (request()->wantsJson()) {
+				return response()->json(['messages' => __('messages.provider_earning_error'), 'status' => false]);
+			} else {
+				return redirect()->route('home')->with('error', __('messages.provider_earning_error'));
+			}
+		}
 
-        $booking_data = get_provider_commission($bookings);
+		$payoutdata->amount_formate = $provider_earning['value'];
 
-        $provider_earning = calculate_commission($booking_data['total_amount'],$provider_commission,$provider_type,'provider', $providerEarning,$bookings->count());
+		$provider_earning_value = number_format((float)$provider_earning['number_format'], 2, '.', '');
 
-        if($provider_earning['number_format'] <= 0){
-            if (request()->wantsJson()) {
-                return response()->json(['messages' => __('messages.provider_earning_error'), 'status' => false]);
-            } else {
-                return redirect()->route('home')->with('error', __('messages.provider_earning_error'));
-            }
-        }
+		$payoutdata->amount = (float)$provider_earning_value;
 
-        $payoutdata->amount_formate = $provider_earning['value'];
+		$payoutdata->provider_id = $id;
 
-        $provider_earning_value = number_format((float)$provider_earning['number_format'], 2, '.', '');
+		return view('providerpayout.create', compact('pageTitle', 'payoutdata', 'auth_user'));
+	}
 
-        $payoutdata->amount =(double)$provider_earning_value;
+	/**
+	 * Store a newly created resource in storage.
+	 *
+	 * @param  \Illuminate\Http\Request  $request
+	 * @return \Illuminate\Http\Response
+	 */
+	public function store(ProviderPayoutRequest $request)
+	{
+		$data = $request->except('_token');
 
-        $payoutdata->provider_id = $id;
+		$payout_status = '';
 
-        return view('providerpayout.create', compact('pageTitle' ,'payoutdata' ,'auth_user' ));
-    }
+		$payment_gateway = $data['payment_gateway'];
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(ProviderPayoutRequest $request)
-    {
-        if(demoUserPermission()){
-            return  redirect()->back()->withErrors(trans('messages.demo_permission_denied'));
-        }
+		$provider_id = $data['provider_id'];
 
-             $data = $request->except('_token');
+		if ($data['payment_method'] === 'bank') {
 
-             $payout_status='';
+			switch ($payment_gateway) {
 
-             $payment_gateway=$data['payment_gateway'];
+				case 'razorpayx':
 
-             $provider_id=$data['provider_id'];
+					$response = providerpayout_rezopayX($data);
 
-            if($data['payment_method'] === 'bank'){
+					if ($response == '') {
 
-              switch($payment_gateway){
+						return redirect()->back()->withErrors(trans('messages.rezorpayx_details'))->withInput();
+					}
 
-               case 'razorpayx':
+					$payout_details = json_decode($response, True);
+					$payout = $payout_details;
 
-                 $response=providerpayout_rezopayX($data);
+					if ($error = $payout['error']['description']  == '') {
 
-                 if($response==''){
+						$payout_id = $payout['id'];
+						$data['paid_date'] = Carbon::now();
+					} else {
 
-                    return redirect()->back()->withErrors(trans('messages.rezorpayx_details'))->withInput();
+						$razorpay_message = $payout['error']['description'];
 
-                  }
+						return  redirect()->back()->withErrors(trans('messages.razorpay_message', ['razorpay_message' => $razorpay_message]))->withInput();
+					}
+					break;
 
-                 $payout_details = json_decode($response,True);
-                 $payout = $payout_details;
+				case 'stripe':
 
-                if($error=$payout['error']['description']  ==''){
+					$response = providerpayout_stripe($data);
 
-                    $payout_id=$payout['id'] ;
-                    $data['paid_date']=Carbon::now();
+					if ($response == '') {
 
-                  }else {
+						return redirect()->back()->withErrors(trans('messages.stripe_details'))->withInput();
+					} else {
 
-                     $razorpay_message=$payout['error']['description'];
+						$status = $response->status;
 
-                     return  redirect()->back()->withErrors(trans('messages.razorpay_message',['razorpay_message' => $razorpay_message]))->withInput();
+						if ($status == 400) {
 
-                   }
-               break;
+							$error_message = $response->code;
 
-               case 'stripe':
+							return  redirect()->back()->withErrors(trans('messages.stripe_message', ['stripe_message' => $error_message]))->withInput();
+						} else {
 
-                $response=providerpayout_stripe($data);
 
-               if($response==''){
 
-                  return redirect()->back()->withErrors(trans('messages.stripe_details'))->withInput();
+							$payout_id = $response['id'];
 
-                 }else{
+							$status = '';
 
-                 $status = $response->status;
+							if ($payout_id != '') {
 
-               if($status==400){
+								$status = "paid";
+							}
 
-                 $error_message = $response->code;
+							$data['bank_id'] = $data['bank'];
+							$data['status'] = $status;
+							$data['paid_date'] = Carbon::now();
+						}
+					}
 
-                 return  redirect()->back()->withErrors(trans('messages.stripe_message',['stripe_message' => $error_message]))->withInput();
+					break;
+			}
+		}
 
-                }else{
+		$result = ProviderPayout::create($data);
 
+		$activity_data = [
+			'type' => 'provider_payout',
+			'activity_type' => 'provider_payout',
+			'id' => $result->id,
+			'user_id' => $result->provider_id,
+			'amount' => $result->amount,
+		];
+		$this->sendNotification($activity_data);
 
 
-                 $payout_id=$response['id'];
+		if ($result) {
 
-                   $status='';
+			if ($data['payment_method'] === 'wallet') {
+				$wallet = Wallet::where('user_id', $data['provider_id'])->first();
+				if ($wallet) {
 
-                   if($payout_id!=''){
+					$wallet_amount = $wallet->amount;
+					$payout_amount = $result->amount;
+					$final_wallet_amount = $wallet_amount - $payout_amount;
+					$wallet->amount =  $final_wallet_amount;
+					$wallet->save();
+					$activity_data = [
+						'activity_type' => 'wallet_payout_transfer',
+						'transfer_amount' => $payout_amount,
+						'wallet' => $wallet,
+					];
+					$this->sendNotification($activity_data);
+				}
+			}
+		}
 
-                        $status="paid";
-                    }
+		if (request()->is('api*')) {
+			$message = __('messages.created_success', ['form' => 'Provider Payout']);
+			return comman_message_response($message);
+		}
 
-                     $data['bank_id']=$data['bank'];
-                     $data['status']=$status;
-                     $data['paid_date']=Carbon::now();
+		if ($payout_status == 'queued') {
 
-                 }
-               }
+			return redirect()->route('earning')->with('success', __('messages.queue_message', ['form' => 'Provider Payout']));
+		}
 
-                break;
+		return redirect()->route('earning')->with('success', __('messages.created_success', ['form' => 'Provider Payout']));
+	}
 
-            }
+	/**
+	 * Display the specified resource.
+	 *
+	 * @param  int  $id
+	 * @return \Illuminate\Http\Response
+	 */
+	public function show($id)
+	{
+		$providerdata = User::where('user_type', 'provider')->where('id', $id)->first();
+		//
+		$pageTitle = __('messages.list_form_title', ['form' => __('messages.providerpayout_list')]);
+		$auth_user = authSession();
+		$assets = ['datatable'];
+		return view('providerpayout.view', compact('pageTitle', 'auth_user', 'assets', 'id', 'providerdata'));
+	}
 
-         }
 
-        $result = ProviderPayout::create($data);
+	public function ProviderPayout_index_data(DataTables $datatable, $id)
+	{
+		$query = ProviderPayout::where('provider_id', $id);
 
-        $activity_data = [
-            'type' => 'provider_payout',
-            'activity_type' => 'provider_payout',
-            'id' => $result->id,
-            'user_id' => $result->provider_id,
-            'amount' => $result->amount,
-        ];
-        $this->sendNotification($activity_data);
+		if (auth()->user()->hasAnyRole(['admin'])) {
+			$query->newquery();
+		}
 
+		return $datatable->eloquent($query)
+			->editColumn('payment_method', function ($payout) {
+				return !empty($payout->payment_method) ? $payout->payment_method : 'cash';
+			})
+			->addColumn('bank_name', function ($payout) {
 
-        if($result){
+			if ($payout->payment_method == 'bank') {
+				$bank = Bank::where('id', $payout->bank_id)->value('bank_name');
+				return $bank;
+			} else {
+				return '-';
+			}
+		})
+			->editColumn('provider_id', function ($payout) {
+				return ($payout->providers != null && isset($payout->providers)) ? $payout->providers->display_name : '-';
+			})
+			->editColumn('amount', function ($payout) {
+				return ($payout->amount != null && isset($payout->amount)) ? getPriceFormat($payout->amount) : '-';
+			})
+			->editColumn('created_at', function ($payout) {
+				return $payout->created_at;
+			})
+			->addIndexColumn()
+			->rawColumns(['bank_name'])
+			->toJson();
+	}
 
-            if($data['payment_method'] === 'wallet'){
-                $wallet = Wallet::where('user_id',$data['provider_id'])->first();
-                if($wallet){
 
-                    $wallet_amount = $wallet->amount;
-                    $payout_amount = $result->amount;
-                    $final_wallet_amount = $wallet_amount - $payout_amount;
-                    $wallet->amount =  $final_wallet_amount;
-                    $wallet->save();
-                    $activity_data = [
-                        'activity_type' => 'wallet_payout_transfer',
-                        'transfer_amount' => $payout_amount ,
-                        'wallet' => $wallet,
-                    ];
-                    $this->sendNotification($activity_data);
+	/**
+	 * Show the form for editing the specified resource.
+	 *
+	 * @param  int  $id
+	 * @return \Illuminate\Http\Response
+	 */
+	public function edit($id)
+	{
+		//
+	}
 
+	/**
+	 * Update the specified resource in storage.
+	 *
+	 * @param  \Illuminate\Http\Request  $request
+	 * @param  int  $id
+	 * @return \Illuminate\Http\Response
+	 */
+	public function update(Request $request, $id)
+	{
+		//
+	}
 
-                }
-            }
-        }
+	/**
+	 * Remove the specified resource from storage.
+	 *
+	 * @param  int  $id
+	 * @return \Illuminate\Http\Response
+	 */
+	public function destroy($id)
+	{
+		$providerpayout = ProviderPayout::find($id);
+		$msg = __('messages.msg_fail_to_delete', ['item' => __('messages.providerpayout')]);
 
-        if ( request()->is('api*')){
-          $message = __('messages.created_success',['form' => 'Provider Payout']);
-          return comman_message_response($message);
-        }
-
-     if($payout_status=='queued'){
-
-        return redirect()->route('earning')->with('success', __('messages.queue_message',['form' => 'Provider Payout']));
-
-       }
-
-        return redirect()->route('earning')->with('success', __('messages.created_success',['form' => 'Provider Payout']));
-
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        $providerdata = User::where('user_type','provider')->where('id',$id)->first();
-        //
-        $pageTitle = __('messages.list_form_title',['form' => __('messages.providerpayout_list')] );
-        $auth_user = authSession();
-        $assets = ['datatable'];
-        return view('providerpayout.view', compact('pageTitle','auth_user','assets','id','providerdata'));
-    }
-
-
-    public function ProviderPayout_index_data(DataTables $datatable,$id)
-    {
-        $query = ProviderPayout::where('provider_id',$id);
-
-        if (auth()->user()->hasAnyRole(['admin'])) {
-            $query->newquery();
-        }
-
-        return $datatable ->eloquent($query)
-        ->editColumn('payment_method', function($payout) {
-            return !empty($payout->payment_method) ? $payout->payment_method : 'cash';
-        })
-        ->addColumn('bank_name', function($payout) {
-
-        if($payout->payment_method == 'bank'){
-            $bank = Bank::where('id',$payout->bank_id)->value('bank_name');
-            return $bank;
-        }
-        else{
-            return '-';
-        }
-
-        })
-        ->editColumn('provider_id', function($payout) {
-            return ($payout->providers != null && isset($payout->providers)) ? $payout->providers->display_name : '-';
-        })
-        ->editColumn('amount', function($payout) {
-            return ($payout->amount != null && isset($payout->amount)) ? getPriceFormat($payout->amount) : '-';
-        })
-        ->editColumn('created_at', function($payout) {
-            return $payout->created_at;
-        })
-        ->addIndexColumn()
-        ->rawColumns(['bank_name'])
-        ->toJson();
-    }
-
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
-    {
-        if(demoUserPermission()){
-            return  redirect()->back()->withErrors(trans('messages.demo_permission_denied'));
-        }
-        $providerpayout = ProviderPayout::find($id);
-        $msg= __('messages.msg_fail_to_delete',['item' => __('messages.providerpayout')] );
-
-        if($providerpayout != '') {
-            $providerpayout->delete();
-            $msg= __('messages.msg_deleted',['name' => __('messages.providerpayout')] );
-        }
-        return comman_custom_response(['message'=> $msg, 'status' => true]);
-    }
-
+		if ($providerpayout != '') {
+			$providerpayout->delete();
+			$msg = __('messages.msg_deleted', ['name' => __('messages.providerpayout')]);
+		}
+		return comman_custom_response(['message' => $msg, 'status' => true]);
+	}
 }
-

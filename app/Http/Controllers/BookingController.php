@@ -414,9 +414,7 @@ class BookingController extends Controller
    */
   public function update(BookingUpdateRequest $request, $id)
   {
-    if (demoUserPermission()) {
-      return  redirect()->back()->withErrors(trans('messages.demo_permission_denied'));
-    }
+
     $data = $request->all();
 
     $data['date'] = isset($request->date) ? date('Y-m-d H:i:s', strtotime($request->date)) : date('Y-m-d H:i:s');
@@ -530,9 +528,7 @@ class BookingController extends Controller
    */
   public function destroy($id)
   {
-    if (demoUserPermission()) {
-      return  redirect()->back()->withErrors(trans('messages.demo_permission_denied'));
-    }
+
     $booking = Booking::find($id);
 
     $msg = __('messages.msg_fail_to_delete', ['item' => __('messages.booking')]);

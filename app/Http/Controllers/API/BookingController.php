@@ -556,10 +556,6 @@ class BookingController extends Controller
 	{
 		$type = $request->type;
 
-		if (demoUserPermission()) {
-			$message = __('messages.demo.permission.denied');
-			return comman_message_response($message);
-		}
 		if ($type === 'user_service_rating') {
 			$bookingrating = BookingRating::find($id);
 			$msg = __('messages.msg_fail_to_delete', ['name' => __('messages.user_ratings')]);

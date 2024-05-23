@@ -72,7 +72,7 @@ class HomeController extends Controller
     }
     if ($user->hasRole('provider')) {
       $revenuedata = ProviderPayout::selectRaw('sum(amount) as total , DATE_FORMAT(created_at , "%m") as month')
-      ->where('provider_id', auth()->user()->id)
+        ->where('provider_id', auth()->user()->id)
         ->whereYear('created_at', date('Y'))
         ->groupBy('month');
       $revenuedata = $revenuedata->get()->toArray();
@@ -143,15 +143,6 @@ class HomeController extends Controller
   }
   public function changeStatus(Request $request)
   {
-    if (demoUserPermission()) {
-      $message = __('messages.demo_permission_denied');
-      $response = [
-        'status'    => false,
-        'message'   => $message
-      ];
-
-      return comman_custom_response($response);
-    }
     $type = $request->type;
     $message_form = __('messages.item');
     $message = trans('messages.update_form', ['form' => trans('messages.status')]);
@@ -348,7 +339,7 @@ class HomeController extends Controller
 
       case 'user':
         $items = \App\Models\User::select('id', 'display_name as text')
-        ->where('user_type', 'user')
+          ->where('user_type', 'user')
           ->where('status', 1);
 
         if ($value != '') {
@@ -360,7 +351,7 @@ class HomeController extends Controller
 
       case 'provider-user':
         $items = \App\Models\User::select('id', 'display_name as text')
-        ->where('user_type', 'provider')->orWhere('user_type', 'user')
+          ->where('user_type', 'provider')->orWhere('user_type', 'user')
           ->where('status', 1);
 
         if ($value != '') {
@@ -409,8 +400,8 @@ class HomeController extends Controller
           $maxRating = $request->top_rated['max'] ?? 5;
 
           $topRatedServiceIds = BookingRating::select('service_id', \DB::raw('COALESCE(AVG(rating), 0) as avg_rating'))
-          ->groupBy('service_id')
-          ->havingRaw('avg_rating >= ?', [$minRating])
+            ->groupBy('service_id')
+            ->havingRaw('avg_rating >= ?', [$minRating])
             ->havingRaw('avg_rating <= ?', [$maxRating])
             ->orderByDesc('avg_rating')
             ->pluck('service_id')
@@ -604,16 +595,6 @@ class HomeController extends Controller
 
   public function removeFile(Request $request)
   {
-    if (demoUserPermission()) {
-      $message = __('messages.demo_permission_denied');
-      $response = [
-        'status'    => false,
-        'message'   => $message
-      ];
-
-      return comman_custom_response($response);
-    }
-
     $type = $request->type;
     $data = null;
     switch ($type) {
