@@ -20,7 +20,12 @@ return [
     'subsctibe_to_service_form_title' => 'Souscrire au service : ',
     'total' => 'Total',
     'define_price_title' => 'Definir le prix du service',
-
+    'freemopay' => 'FreeMo Pay',
+    'freemopay_link_api' => 'Lien API',
+    'freemopay_username_app' => 'Nom d\'utulisateur',
+    'freemopay_password_app' => 'Mot de passe',
+    'airtel' => 'Airtel Money',
+    'thanks_you_for_your_order' => 'Merci pour cotre commande',
     // End
     'user' => 'Utilisateur',
     'user_information' => 'Informations sur l\'utilisateur',

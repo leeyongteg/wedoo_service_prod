@@ -20,7 +20,12 @@ return [
     'subsctibe_to_service_form_title' => 'Subscribe to servive : ',
     'total' => 'Total',
     'define_price_title' => 'Define service price',
-
+    'freemopay' => 'FreeMo Pay',
+    'freemopay_link_api' => 'API link',
+    'freemopay_username_app' => 'Username app',
+    'freemopay_password_app' => 'Password app',
+    'airtel' => 'Airtel Money',
+    'thanks_you_for_your_order' => 'Thanks you for your order',
     // End
     'user' => 'User',
     'user_information' => 'User Information',

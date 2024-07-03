@@ -24,6 +24,7 @@ use App\Traits\NotificationTrait;
 use App\Models\ProviderAddressMapping;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\BookingUpdateRequest;
+use App\Service\FreemoPayService;
 
 class BookingController extends Controller
 {
@@ -361,7 +362,7 @@ class BookingController extends Controller
 
       foreach ($user->unreadNotifications as $notifications) {
 
-        if ($notifications['data']['id'] == $id) {
+                if ($notifications['data']['booking_id'] == $id) {
 
           $notification = $user->unreadNotifications->where('id', $notifications['id'])->first();
           if ($notification) {
@@ -794,15 +795,8 @@ class BookingController extends Controller
 
     $data['currency_code'] = $country ? $country->currency_code : "USD";
 
-    switch ($data['payment_type']) {
-      case 'stripe':
         $data['payment_geteway_data'] = getPaymentMethodkey($data['payment_type']);
-        break;
 
-      default:
-
-        break;
-    }
 
     return comman_custom_response($data);
   }
@@ -990,13 +984,14 @@ class BookingController extends Controller
     return view('booking.define_price_from_fixed_service', compact('bookingdata', 'pageTitle'));
   }
 
-  /**
-   * Update the specified resource in storage.
-   *
-   * @param  \Illuminate\Http\Request  $request
-   * @param  int  $id
-   * @return \Illuminate\Http\Response
-   */
+    /**
+     * Update the specified resource in storage.
+     *
+     * @author Lee <nclaudepascall@gmail.com>
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
   public function definePriceForFixedService(Request $request)
   {
     $bookingdata = Booking::find($request->id);
@@ -1008,6 +1003,7 @@ class BookingController extends Controller
 
       if ($validator->fails())
         return redirect()->back()->withErrors($validator)->withInput();
+
       $price = ($validator->validated())['price'];
 
       $bookingdata->update([
@@ -1040,4 +1036,73 @@ class BookingController extends Controller
         'message' => $message,
       ]);
   }
+
+    /** @Lee */
+
+
+    public function createFreeMoPayPayment(Request $request)
+    {
+        $data = $request->all();
+
+        if ($data['payment_type'] !== 'freemopay')
+        return null;
+
+        $appBaseUrl = $data['payment_geteway_data']['freemopay_link_api'];
+        $passwordApp = $data['payment_geteway_data']['freemopay_password_app'];
+        $userApp = $data['payment_geteway_data']['freemopay_username_app'];
+        $freeMoPaymentService = new FreemoPayService($appBaseUrl, $userApp, $passwordApp);
+
+        $payer = $request->input('phone_number');
+        $booking_id = $request->input('booking_id');
+        $payment_booking_data = Payment::where('booking_id', $booking_id)->first();
+
+        if (!$payment_booking_data)
+            // Gérer le cas où aucune donnée de paiement n'est trouvée pour l'ID de réservation
+            return response()->json(['error' => 'Payment data not found for the provided booking ID'], 404);
+
+        $initPaymentResult = $freeMoPaymentService->initPayment($payer, 100);
+        // $initPaymentResult = $freeMoPaymentService->initPayment($payer, $payment_booking_data->total_amount);
+
+        if (isset($initPaymentResult->code)) {
+            $payment_booking_data->other_transaction_detail = json_encode($initPaymentResult);
+            $payment_booking_data->payment_status = 'failed';
+        } else {
+            $payment_booking_data->other_transaction_detail = json_encode($initPaymentResult);
+            $init_freemo_pay_detail  = $freeMoPaymentService->getPaymentStatus($initPaymentResult->reference);
+            $payment_booking_data->other_transaction_detail = json_encode($init_freemo_pay_detail);
+
+            $payment_booking_data->payment_status = 'pending';
+        }
+
+        $payment_booking_data->save();
+
+        return response()->json($initPaymentResult);
+    }
+
+
+
+    public function initiatePayment(Request $request)
+    {
+        // Obtenez les données du formulaire ou de la requête
+        // $payer = $request->input('payer');
+        // $amount = $request->input('amount');
+        // $externalId = $request->input('external_id');
+
+        // // Initialisez le paiement en utilisant le service de paiement
+        // $paymentResponse = $this->paymentService->initPayment($payer, $amount, $externalId);
+
+        // // Utilisez la réponse comme nécessaire, par exemple, enregistrer les détails du paiement dans la base de données, etc.
+
+        // return response()->json($paymentResponse);
+    }
+
+    public function checkPaymentStatus(Request $request, $reference)
+    {
+        // // Vérifiez le statut du paiement en utilisant le service de paiement
+        // $paymentStatus = $this->paymentService->getPaymentStatus($reference);
+
+        // // Utilisez le statut du paiement comme nécessaire, par exemple, affichez-le à l'utilisateur, mettez à jour l'état dans la base de données, etc.
+
+        // return response()->json($paymentStatus);
+    }
 }
