@@ -25,6 +25,7 @@ use App\Models\ProviderAddressMapping;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\BookingUpdateRequest;
 use App\Notifications\BookingNotification;
+use App\Service\FreemoPayService;
 
 class BookingController extends Controller
 {
@@ -89,8 +90,8 @@ class BookingController extends Controller
                 $datetime = $sitesetup ? json_decode($sitesetup->value) : null;
 
             $date = optional($datetime)->date_format && optional($datetime)->time_format
-            ? date(optional($datetime)->date_format, strtotime($query->date)) . ' / ' . date(optional($datetime)->time_format, strtotime($query->date))
-            : $query->date;
+                ? date(optional($datetime)->date_format, strtotime($query->date)) . ' / ' . date(optional($datetime)->time_format, strtotime($query->date))
+                : $query->date;
 
                 return $date;
             })
@@ -266,7 +267,7 @@ class BookingController extends Controller
         /** @Lee */
         if ($result->service->type == 'hourly' || $result->service->type == 'fixed') {
             $method = $result->service->type == 'hourly' ? '' : 'store';
-            $this->calcutateFinalPrice($result, false, $method);
+            $this->calculateFinalPriceAndUpdateResult($result, false, $method);
         }
         /** End  */
 
@@ -336,7 +337,7 @@ class BookingController extends Controller
 
         if ($request->is('api/*')) {
             $response = [
-                'message' => __('messages.'),
+                'message' => $message,
                 'booking_id' => $result->id
             ];
             return comman_custom_response($response);
@@ -474,7 +475,7 @@ class BookingController extends Controller
                 'amount' => $request->price
             ]);
 
-            $calculateFinalPriceElement = $this->calcutateFinalPrice($bookingdata, true, '');
+            $calculateFinalPriceElement = $this->calculateFinalPriceAndUpdateResult($bookingdata, true, '');
             $bookingdata->update($calculateFinalPriceElement);
         }
         /** End */
@@ -792,17 +793,9 @@ class BookingController extends Controller
         $country_id = $sitesetupdata['default_currency'] ?? null;
         $country = Country::find($country_id);
 
-        $data['currency_code'] = $country ? $country->currency_code : "USD";
+        $data['currency_code'] = $country ? $country->currency_code : "XOF";
 
-        switch ($data['payment_type']) {
-            case 'stripe':
-                $data['payment_geteway_data'] = getPaymentMethodkey($data['payment_type']);
-                break;
-
-            default:
-
-                break;
-        }
+        $data['payment_geteway_data'] = getPaymentMethodkey($data['payment_type']);
 
         return comman_custom_response($data);
     }
@@ -875,30 +868,39 @@ class BookingController extends Controller
      * @param string $operation_type_service_fixed
      * @return void
      */
-    private function calcutateFinalPrice($result, $send_return = false, $operation_type_service_fixed = 'store')
+    private function calculateFinalPriceAndUpdateResult($result, $send_return = false, $operation_type_service_fixed = 'store')
     {
-        $data_final_price = [];
+        // Initialize empty array with all keys
+        $data_final_price = [
+            'final_total_service_price' => 0,
+            'final_total_tax' => 0,
+            'final_sub_total' => 0,
+            'final_discount_amount' => 0,
+            'final_coupon_discount_amount' => 0,
+            'total_amount' => 0
+        ];
 
-        if ($operation_type_service_fixed == 'store') {
-            $data_final_price['final_total_service_price'] = 0;
-            $data_final_price['final_total_tax'] = 0;
-            $data_final_price['final_sub_total'] = 0;
-            $data_final_price['final_discount_amount'] = 0;
-            $data_final_price['final_coupon_discount_amount'] = 0;
-            $data_final_price['total_amount'] = 0;
+        // If operation is 'store', update result and return
+        if ($operation_type_service_fixed === 'store') {
             $result->update($data_final_price);
             return;
         }
 
-        $data_final_price['final_total_service_price'] = $result->getServiceTotalPrice();
-        $data_final_price['final_total_tax'] = $result->getTaxesValue();
-        $data_final_price['final_sub_total'] = $result->getSubTotalValue();
-        $data_final_price['final_discount_amount'] = $result->getDiscountValue();
-        $data_final_price['final_coupon_discount_amount'] = $result->getCouponDiscountValue();
-        $data_final_price['total_amount'] = $result->getTotalValue();
-        if ($send_return == true)
+        // Update array values based on $result methods
+        $data_final_price = [
+            'final_total_service_price' => $result->getServiceTotalPrice(),
+            'final_total_tax' => $result->getTaxesValue(),
+            'final_sub_total' => $result->getSubTotalValue(),
+            'final_discount_amount' => $result->getDiscountValue(),
+            'final_coupon_discount_amount' => $result->getCouponDiscountValue(),
+            'total_amount' => $result->getTotalValue()
+        ];
+
+        // if send_return is true, return data_final_price
+        if ($send_return)
             return $data_final_price;
 
+        // Otherwise, update result with data_final_price
         $result->update($data_final_price);
     }
 
@@ -1018,7 +1020,7 @@ class BookingController extends Controller
             ]);
 
 
-            $calculateFinalPriceElement = $this->calcutateFinalPrice($bookingdata, true, '');
+            $calculateFinalPriceElement = $this->calculateFinalPriceAndUpdateResult($bookingdata, true, '');
             $bookingdata->update($calculateFinalPriceElement);
 
             $this->sendNotification([
@@ -1045,5 +1047,70 @@ class BookingController extends Controller
                 'event' => 'callback',
                 'message' => $message,
             ]);
+    }
+
+
+    public function createFreeMoPayPayment(Request $request)
+    {
+        $data = $request->all();
+
+        if ($data['payment_type'] !== 'freemopay')
+        return null;
+
+        $appBaseUrl = $data['payment_geteway_data']['freemopay_link_api'];
+        $passwordApp = $data['payment_geteway_data']['freemopay_password_app'];
+        $userApp = $data['payment_geteway_data']['freemopay_username_app'];
+        $freeMoPaymentService = new FreemoPayService($appBaseUrl, $userApp, $passwordApp);
+
+        $payer = $request->input('phone_number');
+        $booking_id = $request->input('booking_id');
+        $payment_booking_data = Payment::where('booking_id', $booking_id)->first();
+
+        if (!$payment_booking_data)
+            // Gérer le cas où aucune donnée de paiement n'est trouvée pour l'ID de réservation
+            return response()->json(['error' => 'Payment data not found for the provided booking ID'], 404);
+
+        $initPaymentResult = $freeMoPaymentService->initPayment($payer, 100);
+        // $initPaymentResult = $freeMoPaymentService->initPayment($payer, $payment_booking_data->total_amount);
+
+        if (isset($initPaymentResult->code)) {
+            $payment_booking_data->other_transaction_detail = json_encode($initPaymentResult);
+            $payment_booking_data->payment_status = 'failed';
+        } else {
+            $payment_booking_data->other_transaction_detail = json_encode($initPaymentResult);
+            $init_freemo_pay_detail  = $freeMoPaymentService->getPaymentStatus($initPaymentResult->reference);
+            $payment_booking_data->other_transaction_detail = json_encode($init_freemo_pay_detail);
+
+            $payment_booking_data->payment_status = 'pending';
+        }
+
+        $payment_booking_data->save();
+
+        return response()->json($initPaymentResult);
+    }
+
+    public function initiatePayment(Request $request)
+    {
+        // Obtenez les données du formulaire ou de la requête
+        // $payer = $request->input('payer');
+        // $amount = $request->input('amount');
+        // $externalId = $request->input('external_id');
+
+        // // Initialisez le paiement en utilisant le service de paiement
+        // $paymentResponse = $this->paymentService->initPayment($payer, $amount, $externalId);
+
+        // // Utilisez la réponse comme nécessaire, par exemple, enregistrer les détails du paiement dans la base de données, etc.
+
+        // return response()->json($paymentResponse);
+    }
+
+    public function checkPaymentStatus(Request $request, $reference)
+    {
+        // // Vérifiez le statut du paiement en utilisant le service de paiement
+        // $paymentStatus = $this->paymentService->getPaymentStatus($reference);
+
+        // // Utilisez le statut du paiement comme nécessaire, par exemple, affichez-le à l'utilisateur, mettez à jour l'état dans la base de données, etc.
+
+        // return response()->json($paymentStatus);
     }
 }

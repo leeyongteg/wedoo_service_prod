@@ -35,3 +35,6 @@ export const WALLET_PAYMENT_API = `${BASE_URL}/save-payment`;
 export const GET_WALLET_PAYMENT_METHOD = `${BASE_URL}/get-wallet-payment-method`;
 export const GET_WALLET_STRIPE_PAYMENT_URL = `${BASE_URL}/create-wallet-stripe-payment`;
 export const PAYMENT_GATEWAY_LIST = `${BASE_URL}/payment-gateway-list`;
+
+export const GET_FREEMOPAY_PAYMENT_URL = `${BASE_URL}/create-freemopay-payment`
+export const GET_WALLET_FREEMOPAY_PAYMENT_URL = `${BASE_URL}/create-wallet-freemopay-payment`

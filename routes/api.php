@@ -73,7 +73,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('booking-save', [ App\Http\Controllers\BookingController::class, 'store' ] );
     Route::post('get-payment-method', [ App\Http\Controllers\BookingController::class, 'getPaymentMethod' ] );
     Route::post('create-stripe-payment', [ App\Http\Controllers\BookingController::class, 'createStripePayment' ] );
-
+    Route::post('create-freemopay-payment', [App\Http\Controllers\BookingController::class, 'createFreeMoPayPayment']);
 
     Route::post('booking-update', [ API\BookingController::class, 'bookingUpdate' ] );
     Route::get('provider-dashboard',[ API\DashboardController::class, 'providerDashboard' ]);

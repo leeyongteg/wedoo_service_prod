@@ -4,12 +4,12 @@ window.jQuery = window.$ = $
 // import 'swiper/scss/navigation';
 // import 'swiper/scss/pagination';
 // import 'swiper/swiper-bundle.min.css';
-import ('./handyman')
-import { createApp } from "vue";
-import { createPinia } from 'pinia';
-import { createI18n } from "vue-i18n";
-import 'select2/dist/css/select2.min.css';
-import 'select2/dist/js/select2.min.js';
+import('./handyman')
+import { createApp } from 'vue'
+import { createPinia } from 'pinia'
+import { createI18n } from 'vue-i18n'
+import 'select2/dist/css/select2.min.css'
+import 'select2/dist/js/select2.min.js'
 import ServiceSliderSection from './sections/ServiceSliderSection.vue'
 import CategorySection from './sections/CategorySection.vue'
 import CategoryPage from './sections/CategoryPage.vue'
@@ -41,7 +41,10 @@ import Payment from './components/Payment.vue'
 import PostJobForm from './sections/PostJobForm.vue'
 import BookingPostJob from './sections/BookingPostJob.vue'
 import Wallet from './components/Wallet.vue'
-const pinia = createPinia();
+import PhoneNumberModal from './components/PhoneNumberModal.vue'
+import Loader from './components/Loader.vue'
+
+const pinia = createPinia()
 
 const app = createApp()
 
@@ -70,90 +73,89 @@ app.component('top-provider', TopProvider)
 app.component('section-thumbnail-section', SectionThumbnailSection)
 app.component('pagination-component', PaginationCard)
 app.component('rating-component', RatingCard)
-app.component('booking-wizard',BookingWizard)
+app.component('booking-wizard', BookingWizard)
 app.component('rating-all-page', RatingAllPage)
 app.component('booking-rating', BookingRating)
 app.component('handyman-rating', HandymanRating)
 app.component('payment', Payment)
-app.component('post-job-form',PostJobForm)
-app.component('booking-post-job',BookingPostJob)
+app.component('post-job-form', PostJobForm)
+app.component('booking-post-job', BookingPostJob)
 app.component('wallet', Wallet)
+app.component('phone-number-modal', PhoneNumberModal)
+app.component('loader', Loader)
 
 /*--------------------------------------
 Calculate Header height
 ------------------------------------------*/
 function headerHeightCount() {
-    let is_header = document.querySelector('header .iq-navbar');
-    if (is_header !== null) {
-      let headerHeight = document.querySelector('header .iq-navbar')?.getBoundingClientRect().height;
-      document.querySelector(':root').style.setProperty('--header-height', headerHeight + 'px');
-    }
+  let is_header = document.querySelector('header .iq-navbar')
+  if (is_header !== null) {
+    let headerHeight = document.querySelector('header .iq-navbar')?.getBoundingClientRect().height
+    document.querySelector(':root').style.setProperty('--header-height', headerHeight + 'px')
   }
+}
 
-  headerHeightCount();
+headerHeightCount()
 
 //   jQuery(window).on('resize', function () {
 //     headerHeightCount();
 //   });
 
-
-export const confirmcancleSwal = async ({title}) => {
+export const confirmcancleSwal = async ({ title }) => {
   return await Swal.fire({
-      title: title,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#858482',
-      confirmButtonText: 'Yes, do it!'
-    }).then((result) => {
-      return result
-    })
+    title: title,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#858482',
+    confirmButtonText: 'Yes, do it!'
+  }).then((result) => {
+    return result
+  })
 }
-
 
 function formatCurrency(number, noOfDecimal, currencyPosition, currencySymbol) {
+  let formattedNumber = number.toFixed(noOfDecimal)
 
-  let formattedNumber = number.toFixed(noOfDecimal);
+  let [integerPart, decimalPart] = formattedNumber.split('.')
 
-  let [integerPart, decimalPart] = formattedNumber.split('.');
+  integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 
-  integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  decimalPart = decimalPart || ''
 
-  decimalPart = decimalPart || '';
-
-  let currencyString = '';
+  let currencyString = ''
 
   if (currencyPosition === 'left') {
-      currencyString += currencySymbol;
+    currencyString += currencySymbol
 
-      currencyString += integerPart;
+    currencyString += integerPart
 
-      if (noOfDecimal > 0) {
-          currencyString += '.' + decimalPart;
-      }
+    if (noOfDecimal > 0) {
+      currencyString += '.' + decimalPart
+    }
   }
 
-  if (currencyPosition === 'right' ) {
-      // Add decimal part and decimal separator if applicable
-      if (noOfDecimal > 0) {
-          currencyString += integerPart + '.' + decimalPart;
-      }
+  if (currencyPosition === 'right') {
+    // Add decimal part and decimal separator if applicable
+    if (noOfDecimal > 0) {
+      currencyString += integerPart + '.' + decimalPart
+    }
 
-      currencyString += currencySymbol;
+    currencyString += currencySymbol
   }
 
-  return currencyString;
+  return currencyString
 }
 
-window.formatCurrency = formatCurrency;
+window.formatCurrency = formatCurrency
 const i18n = createI18n({
   legacy: false,
-  locale: "en",
+  locale: 'en',
   globalInjection: true,
-  messages: {en: window.localMessagesUpdate} || {},
-});
+  messages: { en: window.localMessagesUpdate } || {}
+})
 
 window.i18n = i18n
 
-app.use(i18n);
+app.use(i18n)
 app.mount('#landing-app')

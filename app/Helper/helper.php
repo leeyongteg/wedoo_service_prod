@@ -1800,34 +1800,18 @@ function formatCurrency($number, $noOfDecimal, $currencyPosition, $currencySymbo
     return $currencyString;
 }
 
-function  getPaymentMethodkey($type)
+function getPaymentMethodkey($type)
 {
+  $pyament_gateway_data = App\Models\PaymentGateway::query()->where('type', $type)->first();
 
-    $pyament_gateway = App\Models\PaymentGateway::query();
-
-    $payment_geteway_value = null;
-
-    switch ($type) {
-
-        case 'stripe':
-
-            $pyament_gateway_data = $pyament_gateway->where('type', $type)->first();
-
-            if ($pyament_gateway_data) {
-
-                if ($pyament_gateway_data->is_test == 1) {
-
-                    $payment_geteway_value = json_decode($pyament_gateway_data->value, true);
-                } else {
-
-                    $payment_geteway_value = json_decode($pyament_gateway_data->live_value, true);
-                }
-            }
-
-            break;
-    }
-
+  if ($pyament_gateway_data) {
+    $payment_geteway_value = $pyament_gateway_data->is_test == 1 ?
+      json_decode($pyament_gateway_data->value, true) :
+      json_decode($pyament_gateway_data->live_value, true);
     return $payment_geteway_value;
+  }
+
+  return null;
 }
 
 function getstripepayments($data)
@@ -1975,4 +1959,31 @@ function fcm($fields)
     $response = curl_exec($ch);
 
     curl_close($ch);
+}
+
+/** @Lee */
+function getFreeMoPayToken($username, $password, $api_base_url)
+{
+  $curl = curl_init();
+
+  curl_setopt_array($curl, array(
+    CURLOPT_URL => "$api_base_url/api/v1/app/token",
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_ENCODING => '',
+    CURLOPT_MAXREDIRS => 10,
+    CURLOPT_TIMEOUT => 0,
+    CURLOPT_FOLLOWLOCATION => true,
+    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+    CURLOPT_CUSTOMREQUEST => 'POST',
+    CURLOPT_POSTFIELDS => json_encode(array('user' => $username, 'password' => $password)),
+    CURLOPT_HTTPHEADER => array(
+      'Content-Type: application/json'
+    ),
+  ));
+
+  $response = curl_exec($curl);
+
+  curl_close($curl);
+
+  return $response;
 }

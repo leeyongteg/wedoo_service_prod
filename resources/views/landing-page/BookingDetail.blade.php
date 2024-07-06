@@ -30,8 +30,8 @@
                                 <p class="text-capitalize font-size-18 fw-500 mb-2">
                                     {{ $bookingData['booking_detail']['booking_date'] }}</p>
                                 <!-- <div class="d-flex align-items-center lh-1 gap-1">
-                                            {{-- {{> components/widgets/filter-rating rating="4"}}<span class="h6 lh-1">(4.3)</span> --}}
-                                        </div> -->
+                                                {{-- {{> components/widgets/filter-rating rating="4"}}<span class="h6 lh-1">(4.3)</span> --}}
+                                            </div> -->
 
 
 
@@ -73,7 +73,6 @@
                                                 class="btn btn-primary text-capitalize">{{ __('landingpage.cancel_booking') }}</button>
                                         </div>
                                     @endif
-
                                     @if (
                                         $bookingData['booking_detail']['status'] === 'completed' &&
                                             ($bookingData['booking_detail']['payment_status'] === null ||
@@ -500,7 +499,8 @@
                                                     </td>
                                                     <td>
                                                         <span
-                                                            class="d-block text-end">{{ getPriceFormat($bookingData['booking_detail']['extra_charges_value']) }} </span>
+                                                            class="d-block text-end">{{ getPriceFormat($bookingData['booking_detail']['extra_charges_value']) }}
+                                                        </span>
                                                     </td>
                                                 </tr>
                                             @endif
@@ -795,8 +795,8 @@
 
 
     <!-- ===================
-            Review Modal
-            ========================== -->
+                Review Modal
+                ========================== -->
     <div class="modal fade" id="ratingModal" aria-labelledby="ratingModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -873,8 +873,8 @@
     </div>
 
     <!-- ===================
-            Status Modal
-            ========================== -->
+                Status Modal
+                ========================== -->
     <div class="modal fade" id="statusModal" aria-labelledby="statusModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content overflow-visible">
@@ -946,8 +946,8 @@
     </div>
 
     <!-- ===================
-            Reason Modal
-            ========================== -->
+                Reason Modal
+                ========================== -->
     <div class="modal fade" id="reasonModal" aria-labelledby="reasonModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
