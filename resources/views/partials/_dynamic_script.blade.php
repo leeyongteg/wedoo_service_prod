@@ -1,7 +1,7 @@
 <script>
 (function($) {
     "use strict";
-    
+
     $(document).ready(function(){
         $('.select2js').select2({
                 width: '100%',
@@ -12,7 +12,7 @@
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             }
         });
-        
+
         if($(".datepicker").length > 0){
             $(".datepicker").flatpickr({
                 // dateFormat: "d-m-Y"
@@ -80,7 +80,7 @@
                 pos: 'bottom-center'
             });
         }
-        
+
         $(document).on('click', '.loadRemoteModel', function(e) {
             e.preventDefault();
             var url = $(this).attr('href');
@@ -148,7 +148,7 @@
         $(document).on('change','.change_status', function() {
 
             var status = $(this).prop('checked') == true ? 1 : 0;
-            
+
             var key_name = $(this).attr('data-name');
             var id = $(this).attr('data-id');
             var type = $(this).attr('data-type');
@@ -167,7 +167,7 @@
             });
         })
         $(document).ready(function () {
-            
+
         })
 
         $(document).on('click', '[data-toggle="tabajax"]', function(e) {
@@ -175,7 +175,7 @@
             var selectDiv = this;
             ajaxMethodCall(selectDiv);
         });
-        
+
         function ajaxMethodCall(selectDiv) {
 
             var $this = $(selectDiv),
@@ -192,7 +192,7 @@
             return false;
         }
 
-      
+
 
         $('form[data-toggle="validator"]').on('submit', function (e) {
             window.setTimeout(function () {
@@ -202,8 +202,8 @@
                     e.preventDefault()
                 }
             }, 0);
-        });   
-        
+        });
+
         $(document).on('click','[data--confirmation="true"]',function(e){
             e.preventDefault();
             var form = $(this).attr('data--submit');
@@ -229,7 +229,7 @@
             buttons: {
                 yes: {
                     action: function () {
-                        
+
                         if(ajaxtype == 'true') {
                             let url = _this;
 
@@ -312,6 +312,7 @@
             });
         }
 
+        // @todo A refactoriser avec le code de broadcasting de notification
         function getNotificationCounts(){
             var url = "{{ route('notification.counts') }}";
             $.ajax({
@@ -321,13 +322,13 @@
 
                         console.log(res);
                     if(res.counts > 0){
-                       
+
                         $('.notify_count').removeClass('d-none');
                         $('.notify_count').addClass('notification_tag').text(res.counts);
                         setNotification(res.counts);
                         $('.notification_list span.dots').removeClass('d-none');
-                        
-                      
+
+
                     }else{
                         $('.notify_count').addClass('notification_tag').text( res.unread_total_count);
                         setNotification( res.unread_total_count);
@@ -344,15 +345,15 @@
 
                     }
 
-                    
+
                 }
             });
         }
 
         getNotificationCounts();
 
-        setInterval(getNotificationCounts, 600000);
-        
+        // setInterval(getNotificationCounts, 600000);
+
         function setNotification(count){
             if(Number(count) >= 100){
                 $('.notify_count').text('99+');

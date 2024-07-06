@@ -4,14 +4,14 @@
             {{ __('messages.all_notifications') }}
         </h4>
         <small class="badge badge-light float-right notification_count notification_tag"> {{ $all_unread_count }}</small>
-    </div>  
+    </div>
     <div class="read-notify-box">
         <h6 class="text-sm text-muted m-0"><span class="notification_count">{{ __('messages.you_unread_notification',['number' => $all_unread_count  ]) }}</span>
             @if($all_unread_count > 0 )
                 <a href="#" data-type="markas_read" class="notifyList pull-right" ><span>{{__('messages.mark_all_as_read') }}</span></a>
             @endif
         </h6>
-    </div> 
+    </div>
 </div>
 
 <div class="card-body overflow-auto card-header-border p-0 card-body-list">
@@ -36,13 +36,13 @@
                                         </small>
                                     </p>
                                 </div>
-                            </div>                                                
+                            </div>
                         </a>
                     @else
                         <a href="#" class="">
                             <div class="list-item d-flex justify-content-start align-items-start">
                                 <div class="list-style-detail ml-2 mr-2">
-                                    <h6 class="font-weight-bold mb-1"># {{ $notification->data['id'] ." ". str_replace("_"," ",ucfirst($notification->data['type'])) }}</h6>
+                                    {{-- <h6 class="font-weight-bold mb-1"># {{ $notification->data['id'] ." ". str_replace("_"," ",ucfirst($notification->data['type'])) }}</h6> --}}
                                     <p class="mb-1">
                                         <small class="text-secondary">{{ isset($notification->data['message']) ? $notification->data['message'] : __('messages.booking') }}</small>
                                     </p>
@@ -55,7 +55,7 @@
                                         </small>
                                     </p>
                                 </div>
-                            </div>                                                
+                            </div>
                         </a>
                     @endif
                 </li>

@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 
 class BookingNotification extends Notification
@@ -27,7 +28,7 @@ class BookingNotification extends Notification
      */
     public function via($notifiable)
     {
-        return ['database'];
+        return ['database', 'broadcast'];
     }
 
     /**
@@ -38,7 +39,6 @@ class BookingNotification extends Notification
      */
     public function toMail($notifiable)
     {
-
     }
 
     /**
@@ -50,5 +50,16 @@ class BookingNotification extends Notification
     public function toArray($notifiable)
     {
         return $this->data;
+    }
+
+    /**
+     * Undocumented function
+     *
+     * @param [type] $notifiable
+     * @return BroadcastMessage
+     */
+    public function toBroadcast($notifiable)
+    {
+        return new BroadcastMessage($this->data);
     }
 }

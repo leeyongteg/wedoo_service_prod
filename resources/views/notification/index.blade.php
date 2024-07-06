@@ -8,13 +8,15 @@
                             <h5 class="font-weight-bold">{{ $pageTitle ?? trans('messages.notification_list') }}</h5>
                         </div>
                         <div class="col-lg-3 justify-content-end align-items-center">
-                            <div class="input-group ">
+                            <div class="input-group">
                                 <span class="input-group-text" id="addon-wrapping"><i class="fas fa-search"></i></span>
-                                <input type="text" class="form-control dt-search" placeholder="Search..." aria-label="Search" aria-describedby="addon-wrapping" aria-controls="dataTableBuilder">
+                                <input type="text" class="form-control dt-search" placeholder="Search..."
+                                    aria-label="Search" aria-describedby="addon-wrapping"
+                                    aria-controls="dataTableBuilder">
                             </div>
                         </div>
                         <div class="table-responsive">
-                            <table id="datatable" class="table table-striped border">
+                            <table id="datatable" class="table-striped table border">
 
                             </table>
                         </div>
@@ -23,67 +25,66 @@
             </div>
         </div>
     </div>
-<script>
+    <script>
         document.addEventListener('DOMContentLoaded', (event) => {
 
             window.renderedDataTable = $('#datatable').DataTable({
-                    processing: true,
-                    serverSide: true,
-                    autoWidth: false,
-                    responsive: true,
-                    dom: '<"row align-items-center"><"table-responsive my-3" rt><"row align-items-center" <"col-md-6" l><"col-md-6" p>><"clear">',
-                    ajax: {
-                    "type"   : "GET",
-                    "url"    : '{{ route("notification.index_data") }}',
-                    "data"   : function( d ) {
+                processing: true,
+                serverSide: true,
+                autoWidth: false,
+                responsive: true,
+                dom: '<"row align-items-center"><"table-responsive my-3" rt><"row align-items-center" <"col-md-6" l><"col-md-6" p>><"clear">',
+                ajax: {
+                    "type": "GET",
+                    "url": '{{ route('notification.index_data') }}',
+                    "data": function(d) {
                         d.search = {
-                        value: $('.dt-search').val()
+                            value: $('.dt-search').val()
                         };
                         d.filter = {
-                        column_status: $('#column_status').val()
+                            column_status: $('#column_status').val()
                         }
                     },
+                },
+                columns: [{
+                        name: 'DT_RowIndex',
+                        data: 'DT_RowIndex',
+                        title: "{{ __('messages.srno') }}",
+                        exportable: false,
+                        orderable: false,
+                        searchable: false,
                     },
-                    columns: [
-                        {
-                            name: 'DT_RowIndex',
-                            data: 'DT_RowIndex',
-                            title: "{{__('messages.srno')}}",
-                            exportable: false,
-                            orderable: false,
-                            searchable: false,
-                        },
-                        {
-                            data: 'type',
-                            name: 'type',
-                            title: "{{ __('messages.type') }}"
-                        },
-                        {
-                            data: 'message',
-                            name: 'message',
-                            title: "{{ __('messages.messages') }}"
-                        },
-                        {
-                            data: 'created_at',
-                            name: 'created_at',
-                            title: "{{ __('messages.created_at') }}"
-                        },
-                        {
-                            data: 'updated_at',
-                            name: 'updated_at',
-                            title: "{{ __('messages.updated_at') }}"
-                        },
-                        {
-                            data: 'action',
-                            name: 'action',
-                            orderable: false,
-                            searchable: false,
-                            title: "{{ __('messages.action') }}"
-                        }
-                        
-                    ]
-                    
+                    {
+                        name: 'type',
+                        data: 'type',
+                        title: "{{ __('messages.type') }}"
+                    },
+                    {
+                        name: 'message',
+                        data: 'message',
+                        title: "{{ __('messages.messages') }}"
+                    },
+                    {
+                        data: 'created_at',
+                        name: 'created_at',
+                        title: "{{ __('messages.created_at') }}"
+                    },
+                    {
+                        name: 'updated_at',
+                        data: 'updated_at',
+                        title: "{{ __('messages.updated_at') }}"
+                    },
+                    {
+                        name: 'action',
+                        data: 'action',
+                        orderable: false,
+                        searchable: false,
+                        title: "{{ __('messages.action') }}"
+                    }
+
+                ]
+
             });
-      });
-</script>
+        });
+    </script>
 </x-master-layout>

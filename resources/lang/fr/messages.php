@@ -11,7 +11,7 @@ return [
     'assign_provider' => 'Attribuer Provider',
     'booking_assigned_provider' => 'La réservation a été attribuée  au provider :name',
     'booking_transfer_provider' => 'La réservation a été transférée au provider :name',
-    'transfer_to_handyman' => 'La réservation a été attribuée  au technicien :name',
+    'transfer_to_handyman' => 'La réservation a été transférée  au technicien :name',
     'assigned_to_handyman' => 'La réservation a été transférée au technicien :name',
     'subscribe' => 'Souscrire',
     'servicesubscribe' => 'Souscrice au service',
@@ -20,6 +20,11 @@ return [
     'subsctibe_to_service_form_title' => 'Souscrire au service : ',
     'total' => 'Total',
     'define_price_title' => 'Definir le prix du service',
+    'assigned_booking_to_provider' =>  'Réservation Assignée Au Provider',
+    'transfer_booking_to_provider' => 'Transférer La Réservation Au Provider',
+    'booking_transfer_to_provider' => 'La réservation a été transférée au provider :name ',
+    'define_price_of_service_message' => 'Prix du service défini',
+    'define_price_of_service' => 'Le prix du service de la commande n°:id a été défini à :amount l\'unité, soit un total de :total_amount pour :quantity services commandés.',
 
     // End
     'user' => 'Utilisateur',

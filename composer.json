@@ -6,6 +6,7 @@
     "license": "MIT",
     "require": {
         "php": "^7.3|^8.0",
+        "aws/aws-sdk-php": "^3.315",
         "barryvdh/laravel-dompdf": "^2.0",
         "carlos-meneses/laravel-mpdf": "^2.1",
         "fideloper/proxy": "^4.4",
@@ -18,6 +19,8 @@
         "lavary/laravel-menu": "^1.8",
         "league/flysystem-aws-s3-v3": "^1.0",
         "orangehill/iseed": "^3.0",
+        "predis/predis": "^2.2",
+        "pusher/pusher-php-server": "^7.2",
         "spatie/laravel-medialibrary": "^9.6",
         "spatie/laravel-permission": "^4.0",
         "stripe/stripe-php": "^10.12",

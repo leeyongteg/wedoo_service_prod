@@ -1,5 +1,5 @@
 <header>
-      @php
+      @php  
          $headerSection = App\Models\FrontendSetting::where('key', 'heder-menu-setting')->first();
          $sectionData = $headerSection ? json_decode($headerSection->value, true) : null;
       @endphp

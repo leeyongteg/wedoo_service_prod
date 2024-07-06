@@ -20,6 +20,12 @@ return [
     'subsctibe_to_service_form_title' => 'Subscribe to servive : ',
     'total' => 'Total',
     'define_price_title' => 'Define service price',
+    'assigned_booking_to_provider' =>  'Assigned Booking To Provider',
+    'transfer_booking' => 'Transfer Booking',
+    'transfer_booking_to_provider' => 'Transfer Booking To Provider',
+    'booking_transfer_to_provider' => 'Booking has been transfer to Provider :name ',
+    'define_price_of_service_message' => 'Price of Service Defined',
+    'define_price_of_service' => 'The price of the service for order #:id has been set to :amount per unit, totaling :total_amount for :quantity services ordered.',
 
     // End
     'user' => 'User',

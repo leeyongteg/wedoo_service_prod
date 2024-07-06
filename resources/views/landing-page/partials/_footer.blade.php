@@ -124,7 +124,7 @@
                                 @foreach ($sectionData['category_id'] as $categoryId)
                                 @php
                                     $category = App\Models\Category::find($categoryId);
-                                  
+
                                 @endphp
                                     @if($category)
                                     @if($category->status==1)

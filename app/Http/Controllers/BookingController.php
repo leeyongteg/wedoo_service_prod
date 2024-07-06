@@ -24,1020 +24,1026 @@ use App\Traits\NotificationTrait;
 use App\Models\ProviderAddressMapping;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\BookingUpdateRequest;
+use App\Notifications\BookingNotification;
 
 class BookingController extends Controller
 {
-  use NotificationTrait;
-  /**
-   * Display a listing of the resource.
-   *
-   * @return \Illuminate\Http\Response
-   */
-  public function index(Request $request)
-  {
-    $filter = [
-      'status' => $request->status,
-    ];
-    $pageTitle = __('messages.list_form_title', ['form' => __('messages.booking')]);
-    $auth_user = authSession();
-    $assets = ['datatable'];
-    return view('booking.index', compact('pageTitle', 'auth_user', 'assets', 'filter'));
-  }
-
-
-  public function index_data(DataTables $datatable, Request $request)
-  {
-    $query = Booking::query()->myBooking();
-    $filter = $request->filter;
-
-    if (isset($filter)) {
-      if (isset($filter['column_status'])) {
-        $query->where('status', $filter['column_status']);
-      }
-    }
-    if (auth()->user()->hasAnyRole(['admin'])) {
-      $query->withTrashed();
+    use NotificationTrait;
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index(Request $request)
+    {
+        $filter = [
+            'status' => $request->status,
+        ];
+        $pageTitle = __('messages.list_form_title', ['form' => __('messages.booking')]);
+        $auth_user = authSession();
+        $assets = ['datatable'];
+        return view('booking.index', compact('pageTitle', 'auth_user', 'assets', 'filter'));
     }
 
-    return $datatable->eloquent($query)
-      ->addColumn('check', function ($row) {
-        return '<input type="checkbox" class="form-check-input select-table-row"  id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" data-type="booking" onclick="dataTableRowCheck(' . $row->id . ',this)">';
-      })
-      ->editColumn('id', function ($query) {
-        return "<a class='btn-link btn-link-hover' href=" . route('booking.show', $query->id) . ">#" . $query->id . "</a>";
-      })
-      ->editColumn('customer_id', function ($query) {
-        return view('booking.customer', compact('query'));
-      })
-      ->filterColumn('customer_id', function ($query, $keyword) {
-        $query->whereHas('customer', function ($q) use ($keyword) {
-          $q->where('display_name', 'like', '%' . $keyword . '%');
-        });
-      })
-      ->editColumn('service_id', function ($query) {
-        $service_name = ($query->service_id != null && isset($query->service)) ? $query->service->name : "";
-        return "<a class='btn-link btn-link-hover' href=" . route('booking.show', $query->id) . ">" . $service_name . "</a>";
-      })
-      ->filterColumn('service_id', function ($query, $keyword) {
-        $query->whereHas('service', function ($q) use ($keyword) {
-          $q->where('name', 'like', '%' . $keyword . '%');
-        });
-      })
-      ->editColumn('date', function ($query) {
-        $sitesetup = Setting::where('type', 'site-setup')->where('key', 'site-setup')->first();
-        $datetime = $sitesetup ? json_decode($sitesetup->value) : null;
 
-      $date = optional($datetime)->date_format && optional($datetime)->time_format
-        ? date(optional($datetime)->date_format, strtotime($query->date)) . ' / ' . date(optional($datetime)->time_format, strtotime($query->date))
-        : $query->date;
+    public function index_data(DataTables $datatable, Request $request)
+    {
+        $query = Booking::query()->myBooking();
+        $filter = $request->filter;
 
-        return $date;
-      })
-      ->editColumn('provider_id', function ($query) {
-        return view('booking.provider', compact('query'));
-      })
-      ->filterColumn('provider_id', function ($query, $keyword) {
-        $query->whereHas('provider', function ($q) use ($keyword) {
-          $q->where('display_name', 'like', '%' . $keyword . '%');
-        });
-      })
-      ->editColumn('status', function ($query) {
-        return bookingstatus(BookingStatus::bookingStatus($query->status));
-      })
-      ->editColumn('payment_id', function ($query) {
-        $payment_status = optional($query->payment)->payment_status;
-        if ($payment_status !== 'paid') {
-          $status = '<span class="badge badge-pay-pending">' . __('messages.pending') . '</span>';
+        if (isset($filter)) {
+            if (isset($filter['column_status'])) {
+                $query->where('status', $filter['column_status']);
+            }
+        }
+        if (auth()->user()->hasAnyRole(['admin'])) {
+            $query->withTrashed();
+        }
+
+        return $datatable->eloquent($query)
+            ->addColumn('check', function ($row) {
+                return '<input type="checkbox" class="form-check-input select-table-row"  id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" data-type="booking" onclick="dataTableRowCheck(' . $row->id . ',this)">';
+            })
+            ->editColumn('id', function ($query) {
+                return "<a class='btn-link btn-link-hover' href=" . route('booking.show', $query->id) . ">#" . $query->id . "</a>";
+            })
+            ->editColumn('customer_id', function ($query) {
+                return view('booking.customer', compact('query'));
+            })
+            ->filterColumn('customer_id', function ($query, $keyword) {
+                $query->whereHas('customer', function ($q) use ($keyword) {
+                    $q->where('display_name', 'like', '%' . $keyword . '%');
+                });
+            })
+            ->editColumn('service_id', function ($query) {
+                $service_name = ($query->service_id != null && isset($query->service)) ? $query->service->name : "";
+                return "<a class='btn-link btn-link-hover' href=" . route('booking.show', $query->id) . ">" . $service_name . "</a>";
+            })
+            ->filterColumn('service_id', function ($query, $keyword) {
+                $query->whereHas('service', function ($q) use ($keyword) {
+                    $q->where('name', 'like', '%' . $keyword . '%');
+                });
+            })
+            ->editColumn('date', function ($query) {
+                $sitesetup = Setting::where('type', 'site-setup')->where('key', 'site-setup')->first();
+                $datetime = $sitesetup ? json_decode($sitesetup->value) : null;
+
+            $date = optional($datetime)->date_format && optional($datetime)->time_format
+            ? date(optional($datetime)->date_format, strtotime($query->date)) . ' / ' . date(optional($datetime)->time_format, strtotime($query->date))
+            : $query->date;
+
+                return $date;
+            })
+            ->editColumn('provider_id', function ($query) {
+                return view('booking.provider', compact('query'));
+            })
+            ->filterColumn('provider_id', function ($query, $keyword) {
+                $query->whereHas('provider', function ($q) use ($keyword) {
+                    $q->where('display_name', 'like', '%' . $keyword . '%');
+                });
+            })
+            ->editColumn('status', function ($query) {
+                return bookingstatus(BookingStatus::bookingStatus($query->status));
+            })
+            ->editColumn('payment_id', function ($query) {
+                $payment_status = optional($query->payment)->payment_status;
+                if ($payment_status !== 'paid') {
+                    $status = '<span class="badge badge-pay-pending">' . __('messages.pending') . '</span>';
+                } else {
+                    $status = '<span class="badge badge-paid">' . __('messages.paid') . '</span>';
+                }
+                return  $status;
+            })
+            ->filterColumn('payment_id', function ($query, $keyword) {
+                $query->whereHas('payment', function ($q) use ($keyword) {
+                    $q->where('payment_status', 'like', $keyword . '%');
+                });
+            })
+            ->editColumn('total_amount', function ($query) {
+                return $query->total_amount ? getPriceFormat($query->total_amount) : '-';
+            })
+
+            ->addColumn('action', function ($booking) {
+                return view('booking.action', compact('booking'))->render();
+            })
+
+            ->editColumn('updated_at', function ($query) {
+                $diff = Carbon::now()->diffInHours($query->updated_at);
+                if ($diff < 25) {
+                    return $query->updated_at->diffForHumans();
+                } else {
+                    return $query->updated_at->isoFormat('llll');
+                }
+            })
+            ->addIndexColumn()
+            ->rawColumns(['action', 'status', 'payment_id', 'service_id', 'id', 'check'])
+            ->toJson();
+    }
+
+    /* bulck action method */
+    public function bulk_action(Request $request)
+    {
+        $ids = explode(',', $request->rowIds);
+
+        $actionType = $request->action_type;
+
+        $message = 'Bulk Action Updated';
+        switch ($actionType) {
+            case 'change-status':
+                $branches = Booking::whereIn('id', $ids)->update(['status' => $request->status]);
+                $message = 'Bulk Booking Status Updated';
+                break;
+
+            case 'delete':
+                Booking::whereIn('id', $ids)->delete();
+                $message = 'Bulk Booking Deleted';
+                break;
+
+            case 'restore':
+                Booking::whereIn('id', $ids)->restore();
+                $message = 'Bulk Booking Restored';
+                break;
+
+            case 'permanently-delete':
+                Booking::whereIn('id', $ids)->forceDelete();
+                $message = 'Bulk Booking Permanently Deleted';
+                break;
+
+            default:
+                return response()->json(['status' => false, 'message' => 'Action Invalid']);
+                break;
+        }
+
+        return response()->json(['status' => true, 'message' => $message]);
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create(Request $request)
+    {
+        $id = $request->id;
+        $auth_user = authSession();
+
+        $bookingdata = Booking::find($id);
+        $pageTitle = __('messages.update_form_title', ['form' => __('messages.booking')]);
+
+        if ($bookingdata == null) {
+            $pageTitle = __('messages.add_button_form', ['form' => __('messages.booking')]);
+            $bookingdata = new Booking;
+        }
+
+        return view('booking.create', compact('pageTitle', 'bookingdata', 'auth_user'));
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        $data = $request->all();
+        $data['tax'] = null;
+
+        if ($request->id == null)
+            $data['status'] = !empty($data['status']) ? $data['status'] : 'pending';
+
+
+        if (isset($data['booking_slot'])) {
+            $date = isset($request->date) ? date('Y-m-d', strtotime($request->date)) : date('Y-m-d');
+            $time = date('H:i:s', strtotime($data['booking_slot']));
+            $data['date'] = $date . ' ' . $time;
         } else {
-          $status = '<span class="badge badge-paid">' . __('messages.paid') . '</span>';
+            $data['date'] = isset($request->date) ? date('Y-m-d H:i:s', strtotime($request->date)) : date('Y-m-d H:i:s');
         }
-        return  $status;
-      })
-      ->filterColumn('payment_id', function ($query, $keyword) {
-        $query->whereHas('payment', function ($q) use ($keyword) {
-          $q->where('payment_status', 'like', $keyword . '%');
-        });
-      })
-      ->editColumn('total_amount', function ($query) {
-        return $query->total_amount ? getPriceFormat($query->total_amount) : '-';
-      })
 
-      ->addColumn('action', function ($booking) {
-        return view('booking.action', compact('booking'))->render();
-      })
+        $service_data = Service::find($data['service_id']);
 
-      ->editColumn('updated_at', function ($query) {
-        $diff = Carbon::now()->diffInHours($query->updated_at);
-        if ($diff < 25) {
-          return $query->updated_at->diffForHumans();
-        } else {
-          return $query->updated_at->isoFormat('llll');
+        $data['provider_id'] = !empty($data['provider_id']) ? $data['provider_id'] : $service_data->provider_id;
+
+        if ($request->has('tax') && $request->tax != null) {
+            $data['tax'] = json_encode($request->tax);
         }
-      })
-      ->addIndexColumn()
-      ->rawColumns(['action', 'status', 'payment_id', 'service_id', 'id', 'check'])
-      ->toJson();
-  }
 
-  /* bulck action method */
-  public function bulk_action(Request $request)
-  {
-    $ids = explode(',', $request->rowIds);
-
-    $actionType = $request->action_type;
-
-    $message = 'Bulk Action Updated';
-    switch ($actionType) {
-      case 'change-status':
-        $branches = Booking::whereIn('id', $ids)->update(['status' => $request->status]);
-        $message = 'Bulk Booking Status Updated';
-        break;
-
-      case 'delete':
-        Booking::whereIn('id', $ids)->delete();
-        $message = 'Bulk Booking Deleted';
-        break;
-
-      case 'restore':
-        Booking::whereIn('id', $ids)->restore();
-        $message = 'Bulk Booking Restored';
-        break;
-
-      case 'permanently-delete':
-        Booking::whereIn('id', $ids)->forceDelete();
-        $message = 'Bulk Booking Permanently Deleted';
-        break;
-
-      default:
-        return response()->json(['status' => false, 'message' => 'Action Invalid']);
-        break;
-    }
-
-    return response()->json(['status' => true, 'message' => $message]);
-  }
-
-  /**
-   * Show the form for creating a new resource.
-   *
-   * @return \Illuminate\Http\Response
-   */
-  public function create(Request $request)
-  {
-    $id = $request->id;
-    $auth_user = authSession();
-
-    $bookingdata = Booking::find($id);
-    $pageTitle = __('messages.update_form_title', ['form' => __('messages.booking')]);
-
-    if ($bookingdata == null) {
-      $pageTitle = __('messages.add_button_form', ['form' => __('messages.booking')]);
-      $bookingdata = new Booking;
-    }
-
-    return view('booking.create', compact('pageTitle', 'bookingdata', 'auth_user'));
-  }
-
-  /**
-   * Store a newly created resource in storage.
-   *
-   * @param  \Illuminate\Http\Request  $request
-   * @return \Illuminate\Http\Response
-   */
-  public function store(Request $request)
-  {
-    $data = $request->all();
-    $data['tax'] = null;
-
-    if ($request->id == null)
-      $data['status'] = !empty($data['status']) ? $data['status'] : 'pending';
-
-
-    if (isset($data['booking_slot'])) {
-      $date = isset($request->date) ? date('Y-m-d', strtotime($request->date)) : date('Y-m-d');
-      $time = date('H:i:s', strtotime($data['booking_slot']));
-      $data['date'] = $date . ' ' . $time;
-    } else {
-      $data['date'] = isset($request->date) ? date('Y-m-d H:i:s', strtotime($request->date)) : date('Y-m-d H:i:s');
-    }
-
-    $service_data = Service::find($data['service_id']);
-
-    $data['provider_id'] = !empty($data['provider_id']) ? $data['provider_id'] : $service_data->provider_id;
-
-    if ($request->has('tax') && $request->tax != null) {
-      $data['tax'] = json_encode($request->tax);
-    }
-
-    if ($request->coupon_id != null) {
-      $coupons = Coupon::with('serviceAdded')->where('code', $request->coupon_id)
-        ->where('expire_date', '>', date('Y-m-d H:i'))->where('status', 1)
-        ->whereHas('serviceAdded', function ($coupon) use ($service_data) {
-          $coupon->where('service_id', $service_data->id);
-        })->first();
-      if ($coupons == null) {
-        return comman_message_response(__('messages.invalid_coupon_code'), 406);
-      } else {
-        $data['coupon_id'] = $coupons->id;
-      }
-    }
-
-    $result = Booking::updateOrCreate(['id' => $request->id], $data);
-
-    $activity_data = [
-      'activity_type' => 'add_booking',
-      'booking_id' => $result->id,
-      'booking' => $result,
-    ];
-    $this->sendNotification($activity_data);
-
-
-    if ($data['coupon_id'] != null) {
-      $coupons = Coupon::find($data['coupon_id']);
-
-      $coupon_data = [
-        'booking_id'    => $result->id,
-        'code'          => $coupons->code,
-        'discount'      => $coupons->discount,
-        'discount_type' => $coupons->discount_type,
-      ];
-
-      $result->couponAdded()->create($coupon_data);
-    }
-    /** @Lee */
-    if ($result->service->type == 'hourly')
-      $this->calcutateFinalPrice($result, false, '');
-    if ($result->service->type == 'fixed')
-      $this->calcutateFinalPrice($result, false, 'store');
-    /** End  */
-
-
-    if ($request->has('booking_address_id') && $request->booking_address_id != null) {
-      $booking_address_mapping = ProviderAddressMapping::find($data['booking_address_id']);
-
-      $booking_address_data = [
-        'booking_id'    => $result->id,
-        'address'          => $booking_address_mapping->address,
-        'latitude'      => $booking_address_mapping->latitude,
-        'longitude' => $booking_address_mapping->longitude,
-      ];
-
-      $result->addressAdded()->create($booking_address_data);
-    }
-
-    if ($request->has('service_addon_id') && is_array($request->service_addon_id) != null) {
-      foreach ($request->service_addon_id as $serviceaddon) {
-        $booking_serviceaddon_mapping = ServiceAddon::find($serviceaddon);
-        if ($booking_serviceaddon_mapping) {
-          $booking_serviceaddon_data = [
-            'booking_id' => $result->id,
-            'service_addon_id' => $booking_serviceaddon_mapping->id,
-            'name' => $booking_serviceaddon_mapping->name,
-            'price' => $booking_serviceaddon_mapping->price,
-          ];
-
-          $result->bookingAddonService()->create($booking_serviceaddon_data);
+        if ($request->coupon_id != null) {
+            $coupons = Coupon::with('serviceAdded')->where('code', $request->coupon_id)
+                ->where('expire_date', '>', date('Y-m-d H:i'))->where('status', 1)
+                ->whereHas('serviceAdded', function ($coupon) use ($service_data) {
+                    $coupon->where('service_id', $service_data->id);
+                })->first();
+            if ($coupons == null) {
+                return comman_message_response(__('messages.invalid_coupon_code'), 406);
+            } else {
+                $data['coupon_id'] = $coupons->id;
+            }
         }
-      }
-    }
 
-
-    if ($request->has('booking_package') && $request->booking_package != null) {
-      $booking_package = [
-        'booking_id' => $result->id,
-        'service_package_id' => $data['booking_package']['id'],
-        'provider_id' => $data['provider_id'],
-        'name' => $data['booking_package']['name'],
-        'is_featured' => $data['booking_package']['is_featured'],
-        'package_type' => $data['booking_package']['package_type'],
-        'price' => $data['booking_package']['price'],
-      ];
-      if (!empty($data['booking_package']['start_at'])) {
-        $booking_package['start_at'] = $data['booking_package']['start_at'];
-      }
-      if (!empty($data['booking_package']['end_at'])) {
-        $booking_package['end_at'] = $data['booking_package']['end_at'];
-      }
-      if (!empty($data['booking_package']['subcategory_id'])) {
-        $booking_package['subcategory_id'] = $data['booking_package']['subcategory_id'];
-      }
-      if (!empty($data['booking_package']['category_id'])) {
-        $booking_package['category_id'] = $data['booking_package']['category_id'];
-      }
-      $result->bookingPackage()->create($booking_package);
-    }
-    if (!empty($data['type']) && $data['type'] === 'user_post_job') {
-      $post_request = PostJobRequest::where('id', $data['post_request_id'])->first();
-      $post_request->date = isset($request->date) ? date('Y-m-d H:i:s', strtotime($request->date)) : date('Y-m-d H:i:s');
-      $post_request->update();
-    }
-    if ($result->wasRecentlyCreated) {
-      $message = __('messages.save_form', ['form' => __('messages.booking')]);
-    }
-
-    if ($request->is('api/*')) {
-      $response = [
-        'message' => $message,
-        'booking_id' => $result->id
-      ];
-      return comman_custom_response($response);
-    }
-    return  redirect(route('booking.index'))->withSuccess($message);
-  }
-
-  /**
-   * Display the specified resource.
-   *
-   * @param  int  $id
-   * @return \Illuminate\Http\Response
-   */
-  public function show($id)
-  {
-    $auth_user = authSession();
-    $user = auth()->user();
-    $user->last_notification_seen = now();
-    $user->save();
-
-    if (count($user->unreadNotifications) > 0) {
-
-      foreach ($user->unreadNotifications as $notifications) {
-
-        if ($notifications['data']['id'] == $id) {
-
-          $notification = $user->unreadNotifications->where('id', $notifications['id'])->first();
-          if ($notification) {
-            $notification->markAsRead();
-          }
-        }
-      }
-    }
-
-    $bookingdata = Booking::with('bookingExtraCharge', 'payment')->myBooking()->find($id);
-    $tabpage = 'info';
-    if (empty($bookingdata)) {
-      $msg = __('messages.not_found_entry', ['name' => __('messages.booking')]);
-      return redirect(route('booking.index'))->withError($msg);
-    }
-    if (count($auth_user->unreadNotifications) > 0) {
-      $auth_user->unreadNotifications->where('data.id', $id)->markAsRead();
-    }
-
-    $pageTitle = __('messages.view_form_title', ['form' => __('messages.booking')]);
-    return view('booking.view', compact('pageTitle', 'bookingdata', 'auth_user', 'tabpage'));
-  }
-
-  /**
-   * Show the form for editing the specified resource.
-   *
-   * @param  int  $id
-   * @return \Illuminate\Http\Response
-   */
-  public function edit($id)
-  {
-    $auth_user = authSession();
-
-    $bookingdata = Booking::myBooking()->find($id);
-
-    $pageTitle = __('messages.update_form_title', ['form' => __('messages.booking')]);
-    $relation = [
-      'status' => BookingStatus::where('status', 1)->orderBy('sequence', 'ASC')->get()->pluck('label', 'value'),
-    ];
-
-    return view('booking.edit', compact('pageTitle', 'bookingdata', 'auth_user') + $relation);
-  }
-
-  /**
-   * Update the specified resource in storage.
-   *
-   * @param  \Illuminate\Http\Request  $request
-   * @param  int  $id
-   * @return \Illuminate\Http\Response
-   */
-  public function update(BookingUpdateRequest $request, $id)
-  {
-
-    $data = $request->all();
-
-    $data['date'] = isset($request->date) ? date('Y-m-d H:i:s', strtotime($request->date)) : date('Y-m-d H:i:s');
-    $data['start_at'] = isset($request->start_at) ? date('Y-m-d H:i:s', strtotime($request->start_at)) : null;
-    $data['end_at'] = isset($request->end_at) ? date('Y-m-d H:i:s', strtotime($request->end_at)) : null;
-
-    $bookingdata = Booking::find($id);
-    $paymentdata = Payment::where('booking_id', $id)->first();
-
-    /** @Lee */
-    // @Todo valider que le min_price soit inferieur au max_price
-    // Ce bout de code permet de valider s'il existe la plage de prix
-    // Calculer le prix de la facture
-    if ($request->has('price')) {
-      $service = $bookingdata->service;
-      $validator = Validator::make($request->all(), [
-        'price' => "required|numeric|between:$service->min_price_range,$service->max_price_range",
-      ]);
-      if ($validator->fails())
-        return redirect()->back()->withErrors($validator)->withInput();
-      $data['price'] = ($validator->validated())['price'];
-      $data['amount'] =  $data['price'];
-    }
-
-    if ($data['status'] === 'hold') {
-      if ($bookingdata->start_at == null && $bookingdata->end_at == null) {
-        $duration_diff = duration($data['start_at'], $data['end_at'], 'in_minute');
-        $data['duration_diff'] = $duration_diff;
-      } else {
-        if ($bookingdata->status == $data['status']) {
-          $booking_start_date = $bookingdata->start_at;
-          $request_start_date = $data['start_at'];
-          if ($request_start_date > $booking_start_date) {
-            $msg = __('messages.already_in_status', ['status' => $data['status']]);
-            return redirect()->back()->withSuccess($msg);
-          }
-        } else {
-          $duration_diff = $bookingdata->duration_diff;
-          $new_diff = duration($bookingdata->start_at, $bookingdata->end_at, 'in_minute');
-          $data['duration_diff'] = $duration_diff + $new_diff;
-        }
-      }
-    }
-
-    if ($bookingdata->status != $data['status']) {
-      $activity_type = 'update_booking_status';
-    }
-
-    if ($data['status'] == 'cancelled') {
-      $activity_type = 'cancel_booking';
-    }
-
-    /** @Lee */
-    if ($bookingdata->service->type == 'fixed' && $bookingdata->price == null) {
-      $bookingdata->update([
-        'price' => $request->price,
-        'amount' => $request->price
-      ]);
-
-      $calculateFinalPriceElement = $this->calcutateFinalPrice($bookingdata, true, '');
-      $bookingdata->update($calculateFinalPriceElement);
-    }
-    /** End */
-
-    $data['reason'] = isset($data['reason']) ? $data['reason'] : null;
-    $old_status = $bookingdata->status;
-    $bookingdata->update($data);
-    if ($old_status != $data['status']) {
-      $bookingdata->old_status = $old_status;
-
-      $activity_data = [
-        'activity_type' => $activity_type,
-        'booking_id' => $id,
-        'booking' => $bookingdata,
-      ];
-      $this->sendNotification($activity_data);
-    }
-
-    //@Todo Message pour changement de prix
-
-    if ($bookingdata->payment_id != null) {
-      $data['payment_status'] = isset($data['payment_status']) ? $data['payment_status'] : 'pending';
-      $paymentdata->update($data);
-
-      if ($bookingdata->payment_id != null) {
-        $data['payment_status'] = isset($data['payment_status']) ? $data['payment_status'] : 'pending';
-        $paymentdata->update($data);
+        $result = Booking::updateOrCreate(['id' => $request->id], $data);
 
         $activity_data = [
-          'activity_type' => 'payment_message_status',
-          'payment_status' => $data['payment_status'],
-          'booking_id' => $id,
-          'booking' => $bookingdata,
+            'activity_type' => 'add_booking',
+            'booking_id' => $result->id,
+            'booking' => $result,
         ];
         $this->sendNotification($activity_data);
-      }
+
+        if ($data['coupon_id'] != null) {
+            $coupons = Coupon::find($data['coupon_id']);
+
+            $coupon_data = [
+                'booking_id'    => $result->id,
+                'code'          => $coupons->code,
+                'discount'      => $coupons->discount,
+                'discount_type' => $coupons->discount_type,
+            ];
+
+            $result->couponAdded()->create($coupon_data);
+        }
+        /** @Lee */
+        if ($result->service->type == 'hourly' || $result->service->type == 'fixed') {
+            $method = $result->service->type == 'hourly' ? '' : 'store';
+            $this->calcutateFinalPrice($result, false, $method);
+        }
+        /** End  */
+
+
+        if ($request->has('booking_address_id') && $request->booking_address_id != null) {
+            $booking_address_mapping = ProviderAddressMapping::find($data['booking_address_id']);
+
+            $booking_address_data = [
+                'booking_id'    => $result->id,
+                'address'          => $booking_address_mapping->address,
+                'latitude'      => $booking_address_mapping->latitude,
+                'longitude' => $booking_address_mapping->longitude,
+            ];
+
+            $result->addressAdded()->create($booking_address_data);
+        }
+
+        if ($request->has('service_addon_id') && is_array($request->service_addon_id) != null) {
+            foreach ($request->service_addon_id as $serviceaddon) {
+                $booking_serviceaddon_mapping = ServiceAddon::find($serviceaddon);
+                if ($booking_serviceaddon_mapping) {
+                    $booking_serviceaddon_data = [
+                        'booking_id' => $result->id,
+                        'service_addon_id' => $booking_serviceaddon_mapping->id,
+                        'name' => $booking_serviceaddon_mapping->name,
+                        'price' => $booking_serviceaddon_mapping->price,
+                    ];
+
+                    $result->bookingAddonService()->create($booking_serviceaddon_data);
+                }
+            }
+        }
+
+
+        if ($request->has('booking_package') && $request->booking_package != null) {
+            $booking_package = [
+                'booking_id' => $result->id,
+                'service_package_id' => $data['booking_package']['id'],
+                'provider_id' => $data['provider_id'],
+                'name' => $data['booking_package']['name'],
+                'is_featured' => $data['booking_package']['is_featured'],
+                'package_type' => $data['booking_package']['package_type'],
+                'price' => $data['booking_package']['price'],
+            ];
+            if (!empty($data['booking_package']['start_at'])) {
+                $booking_package['start_at'] = $data['booking_package']['start_at'];
+            }
+            if (!empty($data['booking_package']['end_at'])) {
+                $booking_package['end_at'] = $data['booking_package']['end_at'];
+            }
+            if (!empty($data['booking_package']['subcategory_id'])) {
+                $booking_package['subcategory_id'] = $data['booking_package']['subcategory_id'];
+            }
+            if (!empty($data['booking_package']['category_id'])) {
+                $booking_package['category_id'] = $data['booking_package']['category_id'];
+            }
+            $result->bookingPackage()->create($booking_package);
+        }
+        if (!empty($data['type']) && $data['type'] === 'user_post_job') {
+            $post_request = PostJobRequest::where('id', $data['post_request_id'])->first();
+            $post_request->date = isset($request->date) ? date('Y-m-d H:i:s', strtotime($request->date)) : date('Y-m-d H:i:s');
+            $post_request->update();
+        }
+        if ($result->wasRecentlyCreated) {
+            $message = __('messages.save_form', ['form' => __('messages.booking')]);
+        }
+
+        if ($request->is('api/*')) {
+            $response = [
+                'message' => __('messages.'),
+                'booking_id' => $result->id
+            ];
+            return comman_custom_response($response);
+        }
+        return  redirect(route('booking.index'))->withSuccess($message);
     }
-    $message = __('messages.update_form', ['form' => __('messages.booking')]);
 
-    if ($request->is('api/*'))
-    return comman_message_response($message);
+    /**
+     * Display the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function show($id)
+    {
+        $auth_user = authSession();
+        $user = auth()->user();
+        $user->last_notification_seen = now();
+        $user->save();
 
-    return  redirect(route('booking.index'))->withSuccess($message);
-  }
+        if (count($user->unreadNotifications) > 0) {
 
-  /**
-   * Remove the specified resource from storage.
-   *
-   * @param  int  $id
-   * @return \Illuminate\Http\Response
-   */
-  public function destroy($id)
-  {
+            foreach ($user->unreadNotifications as $notifications) {
 
-    $booking = Booking::find($id);
+                if ($notifications['data']['id'] == $id) {
 
-    $msg = __('messages.msg_fail_to_delete', ['item' => __('messages.booking')]);
+                    $notification = $user->unreadNotifications->where('id', $notifications['id'])->first();
+                    if ($notification) {
+                        $notification->markAsRead();
+                    }
+                }
+            }
+        }
 
-    if ($booking != '') {
-      Notification::whereJsonContains('data->id', $booking->id)->delete();
-      $booking->delete();
-      $msg = __('messages.msg_deleted', ['name' => __('messages.booking')]);
-    }
-    return comman_custom_response(['message' => $msg, 'status' => true]);
-  }
+        $bookingdata = Booking::with('bookingExtraCharge', 'payment')->myBooking()->find($id);
+        $tabpage = 'info';
+        if (empty($bookingdata)) {
+            $msg = __('messages.not_found_entry', ['name' => __('messages.booking')]);
+            return redirect(route('booking.index'))->withError($msg);
+        }
+        if (count($auth_user->unreadNotifications) > 0) {
+            $auth_user->unreadNotifications->where('data.id', $id)->markAsRead();
+        }
 
-  public function  bookingAssignForm(Request $request)
-  {
-
-    $bookingdata = Booking::find($request->id);
-    $pageTitle = __('messages.assign_form_title', ['form' => __('messages.booking')]);
-    return view('booking.assigned_form', compact('bookingdata', 'pageTitle'));
-  }
-
-  public function bookingAssigned(Request $request)
-  {
-    $bookingdata =  Booking::find($request->id);
-
-    $assigned_handyman_ids = [];
-    if ($bookingdata->handymanAdded()->count() > 0) {
-      $assigned_handyman_ids = $bookingdata->handymanAdded()->pluck('handyman_id')->toArray();
-      $bookingdata->handymanAdded()->delete();
-      $message = __('messages.transfer_to_handyman');
-      $activity_type = 'transfer_booking';
-    } else {
-      $message = __('messages.assigned_to_handyman');
-      $activity_type = 'assigned_booking';
+        $pageTitle = __('messages.view_form_title', ['form' => __('messages.booking')]);
+        return view('booking.view', compact('pageTitle', 'bookingdata', 'auth_user', 'tabpage'));
     }
 
-    $remove_notification_id = [];
-    if ($request->handyman_id != null) {
-      foreach ($request->handyman_id as $handyman) {
-        $assign_to_handyman = [
-          'booking_id'   => $bookingdata->id,
-          'handyman_id'  => $handyman
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function edit($id)
+    {
+        $auth_user = authSession();
+
+        $bookingdata = Booking::myBooking()->find($id);
+
+        $pageTitle = __('messages.update_form_title', ['form' => __('messages.booking')]);
+        $relation = [
+            'status' => BookingStatus::where('status', 1)->orderBy('sequence', 'ASC')->get()->pluck('label', 'value'),
         ];
-        $remove_notification_id = removeArrayValue($assigned_handyman_ids, $handyman);
-        $bookingdata->handymanAdded()->insert($assign_to_handyman);
-      }
+
+        return view('booking.edit', compact('pageTitle', 'bookingdata', 'auth_user') + $relation);
     }
 
-    if (!empty($remove_notification_id)) {
-      $search = "id" . '":' . $bookingdata->id;
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(BookingUpdateRequest $request, $id)
+    {
 
-      Notification::whereIn('notifiable_id', $remove_notification_id)
-        ->whereJsonContains('data->id', $bookingdata->id)
-        ->delete();
+        $data = $request->all();
+
+        $data['date'] = isset($request->date) ? date('Y-m-d H:i:s', strtotime($request->date)) : date('Y-m-d H:i:s');
+        $data['start_at'] = isset($request->start_at) ? date('Y-m-d H:i:s', strtotime($request->start_at)) : null;
+        $data['end_at'] = isset($request->end_at) ? date('Y-m-d H:i:s', strtotime($request->end_at)) : null;
+
+        $bookingdata = Booking::find($id);
+        $paymentdata = Payment::where('booking_id', $id)->first();
+
+        /** @Lee */
+        // @Todo valider que le min_price soit inferieur au max_price
+        // Ce bout de code permet de valider s'il existe la plage de prix
+        // Calculer le prix de la facture
+        if ($request->has('price')) {
+            $service = $bookingdata->service;
+            $validator = Validator::make($request->all(), [
+                'price' => "required|numeric|between:$service->min_price_range,$service->max_price_range",
+            ]);
+            if ($validator->fails())
+                return redirect()->back()->withErrors($validator)->withInput();
+            $data['price'] = ($validator->validated())['price'];
+            $data['amount'] =  $data['price'];
+        }
+
+        if ($data['status'] === 'hold') {
+            if ($bookingdata->start_at == null && $bookingdata->end_at == null) {
+                $duration_diff = duration($data['start_at'], $data['end_at'], 'in_minute');
+                $data['duration_diff'] = $duration_diff;
+            } else {
+                if ($bookingdata->status == $data['status']) {
+                    $booking_start_date = $bookingdata->start_at;
+                    $request_start_date = $data['start_at'];
+                    if ($request_start_date > $booking_start_date) {
+                        $msg = __('messages.already_in_status', ['status' => $data['status']]);
+                        return redirect()->back()->withSuccess($msg);
+                    }
+                } else {
+                    $duration_diff = $bookingdata->duration_diff;
+                    $new_diff = duration($bookingdata->start_at, $bookingdata->end_at, 'in_minute');
+                    $data['duration_diff'] = $duration_diff + $new_diff;
+                }
+            }
+        }
+
+        if ($bookingdata->status != $data['status']) {
+            $activity_type = 'update_booking_status';
+        }
+
+        if ($data['status'] == 'cancelled') {
+            $activity_type = 'cancel_booking';
+        }
+
+        /** @Lee */
+        if ($bookingdata->service->type == 'fixed' && $bookingdata->price == null) {
+            $bookingdata->update([
+                'price' => $request->price,
+                'amount' => $request->price
+            ]);
+
+            $calculateFinalPriceElement = $this->calcutateFinalPrice($bookingdata, true, '');
+            $bookingdata->update($calculateFinalPriceElement);
+        }
+        /** End */
+
+        $data['reason'] = isset($data['reason']) ? $data['reason'] : null;
+        $old_status = $bookingdata->status;
+        $bookingdata->update($data);
+        if ($old_status != $data['status']) {
+            $bookingdata->old_status = $old_status;
+
+            $activity_data = [
+                'activity_type' => $activity_type,
+                'booking_id' => $id,
+                'booking' => $bookingdata,
+            ];
+            $this->sendNotification($activity_data);
+        }
+
+        //@Todo Message pour changement de prix
+
+        if ($bookingdata->payment_id != null) {
+            $data['payment_status'] = isset($data['payment_status']) ? $data['payment_status'] : 'pending';
+            $paymentdata->update($data);
+
+            if ($bookingdata->payment_id != null) {
+                $data['payment_status'] = isset($data['payment_status']) ? $data['payment_status'] : 'pending';
+                $paymentdata->update($data);
+
+                $activity_data = [
+                    'activity_type' => 'payment_message_status',
+                    'payment_status' => $data['payment_status'],
+                    'booking_id' => $id,
+                    'booking' => $bookingdata,
+                ];
+                $this->sendNotification($activity_data);
+            }
+        }
+        $message = __('messages.update_form', ['form' => __('messages.booking')]);
+
+        if ($request->is('api/*'))
+            return comman_message_response($message);
+
+        return  redirect(route('booking.index'))->withSuccess($message);
     }
 
-    $bookingdata->status = 'accept';
-    $bookingdata->save();
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy($id)
+    {
 
-    $activity_data = [
-      'activity_type' => $activity_type,
-      'booking_id' => $bookingdata->id,
-      'booking' => $bookingdata,
-    ];
-    $this->sendNotification($activity_data);
+        $booking = Booking::find($id);
 
-    $message = __('messages.save_form', ['form' => __('messages.booking')]);
-    if ($request->is('api/*')) {
-      return comman_message_response($message);
+        $msg = __('messages.msg_fail_to_delete', ['item' => __('messages.booking')]);
+
+        if ($booking != '') {
+            Notification::whereJsonContains('data->id', $booking->id)->delete();
+            $booking->delete();
+            $msg = __('messages.msg_deleted', ['name' => __('messages.booking')]);
+        }
+        return comman_custom_response(['message' => $msg, 'status' => true]);
     }
 
-    return response()->json(['status' => true, 'event' => 'callback', 'message' => $message]);
-  }
+    public function  bookingAssignForm(Request $request)
+    {
 
-  public function action(Request $request)
-  {
-    $id = $request->id;
-    $type = $request->type;
-    $booking_data = Booking::withTrashed()->where('id', $id)->first();
-    $msg = __('messages.not_found_entry', ['name' => __('messages.booking')]);
-    if ($request->type === 'restore') {
-      if ($booking_data != '') {
-        $booking_data->restore();
-        $msg = __('messages.msg_restored', ['name' => __('messages.booking')]);
-      }
-    }
-    if ($request->type === 'forcedelete') {
-      $booking_data->forceDelete();
-      $msg = __('messages.msg_forcedelete', ['name' => __('messages.booking')]);
+        $bookingdata = Booking::find($request->id);
+        $pageTitle = __('messages.assign_form_title', ['form' => __('messages.booking')]);
+        return view('booking.assigned_form', compact('bookingdata', 'pageTitle'));
     }
 
-    return comman_custom_response(['message' => $msg, 'status' => true]);
-  }
+    public function bookingAssigned(Request $request)
+    {
+        $bookingdata =  Booking::find($request->id);
 
-  public function bookingDetails(Request $request, $id)
-  {
-    $auth_user = authSession();
-    $providerdata = User::with('providerBooking')->where('user_type', 'provider')->where('id', $id)->first();
-    $earningData = array();
-    foreach ($providerdata->providerBooking as $booking) {
-      $booking_id = $booking->id;
-      $provider_name = optional($booking->provider)->display_name ?? '-';
-      $provider_image = getSingleMedia(optional($booking->provider), 'profile_image', null);
-      $provider_contact = optional($booking->provider)->contact_number ?? '-';
-      $provider_email = optional($booking->provider)->email ?? '-';
-      $amount = $booking->amount;
-      $payment_status = optional($booking->payment)->payment_status ?? '-';
-      $start_at = $booking->start_at;
-      $end_at = $booking->end_at;
-      $earningData[] = [
-        'provider_id' => $providerdata->id,
-        'booking_id' => $booking->id,
-        'provider_name' => $provider_name,
-        'provider_image' => $provider_image,
-        'provider_email' => $provider_email,
-        'provider_contact' => $provider_contact,
-        'amount' => $amount,
-        'payment_status' => $payment_status,
-        'start_at' => $start_at,
-        'end_at' => $end_at,
-      ];
-    }
-    if ($request->ajax()) {
-      return Datatables::of($earningData)
-        ->addIndexColumn()
-        ->addColumn('action', function ($row) {
-          $btn = '-';
-          $booking_id = $row['booking_id'];
-          $btn = "<a href=" . route('booking.show', $booking_id) . "><i class='fas fa-eye'></i></a>";
-          return $btn;
-        })
-        ->editColumn('provider_name', function ($row) {
-          return view('booking.provider', compact('row'));
-        })
-        ->editColumn('payment_status', function ($row) {
-          $payment_status = $row['payment_status'];
-          if ($payment_status == 'pending') {
-            $status = '<span class="badge badge-danger">' . __('messages.pending') . '</span>';
-          } else {
-            $status = '<span class="badge badge-success">' . __('messages.paid') . '</span>';
-          }
-          return  $status;
-        })
-        ->editColumn('start_at', function ($row) {
-          if (is_array($row)) {
-            $row = (object)$row;
-          }
-          $startAt = isset($row->start_at) ? $row->start_at : null;
-          if ($startAt !== null) {
-            $sitesetup = Setting::where('type', 'site-setup')->where('key', 'site-setup')->first();
-            $datetime = $sitesetup ? json_decode($sitesetup->value) : null;
-            $date = optional($datetime)->date_format && optional($datetime)->time_format
-              ? date(optional($datetime)->date_format, strtotime($startAt)) . ' / ' . date(optional($datetime)->time_format, strtotime($startAt))
-              : $startAt;
-            return $date;
-          }
-          return null;
-        })
-        ->editColumn('end_at', function ($row) {
-          if (is_array($row)) {
-            $row = (object)$row;
-          }
-          $endAt = isset($row->end_at) ? $row->end_at : null;
-          if ($endAt !== null) {
-            $sitesetup = Setting::where('type', 'site-setup')->where('key', 'site-setup')->first();
-            $datetime = $sitesetup ? json_decode($sitesetup->value) : null;
-            $date = optional($datetime)->date_format && optional($datetime)->time_format
-              ? date(optional($datetime)->date_format, strtotime($endAt)) . ' / ' . date(optional($datetime)->time_format, strtotime($endAt))
-              : $endAt;
-            return $date;
-          }
-          return null;
-        })
-        ->editColumn('amount', function ($row) {
-          return $row['amount'] ? getPriceFormat($row['amount']) : '-';
-        })
-        ->rawColumns(['action', 'payment_status', 'amount', 'check'])
-        ->make(true);
-    }
-    if (empty($providerdata)) {
-      $msg = __('messages.not_found_entry', ['name' => __('messages.provider')]);
-      return redirect(route('provider.index'))->withError($msg);
-    }
-    $pageTitle = __('messages.booking');
-    return view('booking.details', compact('pageTitle', 'earningData', 'auth_user', 'providerdata'));
-  }
+        $assigned_handyman_ids = [];
+        if ($bookingdata->handymanAdded()->count() > 0) {
+            $assigned_handyman_ids = $bookingdata->handymanAdded()->pluck('handyman_id')->toArray();
+            $bookingdata->handymanAdded()->delete();
+            $message = __('messages.transfer_to_handyman');
+            $activity_type = 'transfer_booking';
+        } else {
+            $message = __('messages.assigned_to_handyman');
+            $activity_type = 'assigned_booking';
+        }
 
-  public function bookingstatus(Request $request, $id)
-  {
-    $tabpage = $request->tabpage;
-    $auth_user = authSession();
-    $user_id = $auth_user->id;
-    $user_data = User::find($user_id);
-    $bookingdata = Booking::with('handymanAdded', 'payment', 'bookingExtraCharge', 'bookingAddonService')->myBooking()->find($id);
-    switch ($tabpage) {
-      case 'info':
-        $data  = view('booking.' . $tabpage, compact('user_data', 'tabpage', 'auth_user', 'bookingdata'))->render();
-        break;
-      case 'status':
-        $data  = view('booking.' . $tabpage, compact('user_data', 'tabpage', 'auth_user', 'bookingdata'))->render();
-        break;
-      default:
-        $data  = view('booking.' . $tabpage, compact('tabpage', 'auth_user', 'bookingdata'))->render();
-        break;
-    }
-    return response()->json($data);
-  }
+        $remove_notification_id = [];
+        if ($request->handyman_id != null) {
+            foreach ($request->handyman_id as $handyman) {
+                $assign_to_handyman = [
+                    'booking_id'   => $bookingdata->id,
+                    'handyman_id'  => $handyman
+                ];
+                $remove_notification_id = removeArrayValue($assigned_handyman_ids, $handyman);
+                $bookingdata->handymanAdded()->insert($assign_to_handyman);
+            }
+        }
 
-  public function createPDF($id)
-  {
-    $data = AppSetting::take(1)->first();
-    $bookingdata = Booking::with('handymanAdded', 'payment', 'bookingExtraCharge')->myBooking()->find($id);
-    $pdf = Pdf::loadView('booking.invoice', ['bookingdata' => $bookingdata, 'data' => $data]);
-    return $pdf->download('invoice.pdf');
-  }
+        if (!empty($remove_notification_id)) {
+            $search = "id" . '":' . $bookingdata->id;
 
-  public function updateStatus(Request $request)
-  {
+            Notification::whereIn('notifiable_id', $remove_notification_id)
+                ->whereJsonContains('data->id', $bookingdata->id)
+                ->delete();
+        }
 
-    switch ($request->type) {
-      case 'payment':
-        $data = Payment::where('booking_id', $request->bookingId)->update(['payment_status' => $request->status]);
-        break;
-      default:
+        $bookingdata->status = 'accept';
+        $bookingdata->save();
 
-        $data = Booking::find($request->bookingId)->update(['status' => $request->status]);
-        break;
+        $activity_data = [
+            'activity_type' => $activity_type,
+            'booking_id' => $bookingdata->id,
+            'booking' => $bookingdata,
+        ];
+        $this->sendNotification($activity_data);
+
+        $message = __('messages.save_form', ['form' => __('messages.booking')]);
+        if ($request->is('api/*')) {
+            return comman_message_response($message);
+        }
+
+        return response()->json(['status' => true, 'event' => 'callback', 'message' => $message]);
     }
 
-    return comman_custom_response(['message' => 'Status Updated', 'status' => true]);
-  }
+    public function action(Request $request)
+    {
+        $id = $request->id;
+        $type = $request->type;
+        $booking_data = Booking::withTrashed()->where('id', $id)->first();
+        $msg = __('messages.not_found_entry', ['name' => __('messages.booking')]);
+        if ($request->type === 'restore') {
+            if ($booking_data != '') {
+                $booking_data->restore();
+                $msg = __('messages.msg_restored', ['name' => __('messages.booking')]);
+            }
+        }
+        if ($request->type === 'forcedelete') {
+            $booking_data->forceDelete();
+            $msg = __('messages.msg_forcedelete', ['name' => __('messages.booking')]);
+        }
 
-  public function saveBookingRating(Request $request)
-  {
-    $rating_data = $request->all();
-    $result = BookingRating::updateOrCreate(['id' => $request->id], $rating_data);
-
-    $message = __('messages.update_form', ['form' => __('messages.rating')]);
-    if ($result->wasRecentlyCreated)
-      $message = __('messages.save_form', ['form' => __('messages.rating')]);
-
-    return  redirect()->back()->withSuccess($message);
-  }
-
-  public function getPaymentMethod(Request $request)
-  {
-    $data = $request->all();
-    $data['datetime'] = now();
-
-    $data['payment_status'] = 'failed';
-
-    $payment_data = Payment::where('booking_id', $data['booking_id'])->first();
-
-    if (!empty($payment_data)) {
-      $payment_data->update($data);
-    } else {
-      $payment_data = Payment::create($data);
-    }
-    $sitesetup = Setting::where('type', 'site-setup')->where('key', 'site-setup')->first();
-    $sitesetupdata = $sitesetup ? json_decode($sitesetup->value, true) : null;
-
-    $country_id = $sitesetupdata['default_currency'] ?? null;
-    $country = Country::find($country_id);
-
-    $data['currency_code'] = $country ? $country->currency_code : "USD";
-
-    switch ($data['payment_type']) {
-      case 'stripe':
-        $data['payment_geteway_data'] = getPaymentMethodkey($data['payment_type']);
-        break;
-
-      default:
-
-        break;
+        return comman_custom_response(['message' => $msg, 'status' => true]);
     }
 
-    return comman_custom_response($data);
-  }
-
-  public function createStripePayment(Request $request)
-  {
-
-    $data = $request->all();
-
-    $checkout_session = getstripepayments($data);
-
-    if (isset($checkout_session['message'])) {
-
-      return comman_custom_response($checkout_session);
-    } else {
-      Payment::where('booking_id', $data['booking_id'])->update(['other_transaction_detail' => $checkout_session['id']]);
-
-      return comman_custom_response($checkout_session);
-    }
-  }
-
-  public function saveStripePayment(Request $request, $id)
-  {
-    $type = $request->type;
-    $result = Payment::where('booking_id', $id)->first();
-    $stripe_session_id = $result->other_transaction_detail;
-    $payment_type = $result->payment_type;
-
-    $session_object = getstripePaymnetId($stripe_session_id, $payment_type);
-
-    if ($session_object['payment_intent'] !== '' && $session_object['payment_status'] == 'paid') {
-
-      $result->txn_id = $session_object['payment_intent'];
-
-      if ($type == 'advance_payment') {
-
-        $result->payment_status = 'advanced_paid';
-      } else {
-
-        $result->payment_status = 'paid';
-      }
-    };
-
-    $result->update();
-
-    $booking = Booking::find($id);
-    if (!empty($result) && $result->payment_status == 'advanced_paid') {
-      $booking->advance_paid_amount  = $result->total_amount;
-      $booking->status  = 'pending';
-    }
-    $booking->payment_id = $result->id;
-    $booking->update();
-
-    $activity_data = [
-      'activity_type' => 'payment_message_status',
-      'payment_status' =>  str_replace("_", " ", ucfirst($result->payment_status)),
-      'booking_id' => $booking->id,
-      'booking' => $booking,
-    ];
-    $this->sendNotification($activity_data);
-
-    return redirect('/booking-list');
-  }
-
-  /**
-   * Undocumented function
-   *
-   * @param [type] $result
-   * @param boolean $send_return
-   * @param string $operation_type_service_fixed
-   * @return void
-   */
-  private function calcutateFinalPrice($result, $send_return = false, $operation_type_service_fixed = 'store')
-  {
-    $data_final_price = [];
-
-    if ($operation_type_service_fixed == 'store') {
-      $data_final_price['final_total_service_price'] = 0;
-      $data_final_price['final_total_tax'] = 0;
-      $data_final_price['final_sub_total'] = 0;
-      $data_final_price['final_discount_amount'] = 0;
-      $data_final_price['final_coupon_discount_amount'] = 0;
-      $data_final_price['total_amount'] = 0;
-      $result->update($data_final_price);
-      return;
-    }
-
-    $data_final_price['final_total_service_price'] = $result->getServiceTotalPrice();
-    $data_final_price['final_total_tax'] = $result->getTaxesValue();
-    $data_final_price['final_sub_total'] = $result->getSubTotalValue();
-    $data_final_price['final_discount_amount'] = $result->getDiscountValue();
-    $data_final_price['final_coupon_discount_amount'] = $result->getCouponDiscountValue();
-    $data_final_price['total_amount'] = $result->getTotalValue();
-    if ($send_return == true)
-      return $data_final_price;
-
-    $result->update($data_final_price);
-  }
-
-  /**
-   * @Lee
-   *
-   * @param Request $request
-   * @return void
-   */
-  public function  bookingAssignProviderForm(Request $request)
-  {
-    $bookingdata = Booking::find($request->id);
-    $pageTitle = __('messages.assign_form_title', ['form' => __('messages.booking')]);
-    return view('booking.assigned_provider_form', compact('bookingdata', 'pageTitle'));
-  }
-
-  /**
-   * @Lee
-   *
-   * @param Request $request
-   * @return void
-   */
-  public function bookingAssignedProvider(Request $request)
-  {
-
-    $data = $request->validate([
-      'provider_id' => 'required|exists:users,id', // S'assurer que le provider_id existe dans la table des utilisateurs
-    ]);
-
-    //@todo Activity type verification
-    $bookingdata =  Booking::findOrFail($request->id);
-    $provider = User::findOrFail($data['provider_id']);
-
-    $assigned_provider_ids = [];
-    if ($bookingdata->providerAdded()->count() > 0) {
-      $assigned_provider_ids = $bookingdata->providerAdded()->pluck('provider_id')->toArray();
-      $bookingdata->providerAdded()->delete();
-      $message = __('messages.transfer_to_provider');
-      $activity_type = 'transfer_booking';
-    } else {
-      $message = __('messages.assigned_to_provider');
-      $activity_type = 'assigned_booking';
+    public function bookingDetails(Request $request, $id)
+    {
+        $auth_user = authSession();
+        $providerdata = User::with('providerBooking')->where('user_type', 'provider')->where('id', $id)->first();
+        $earningData = array();
+        foreach ($providerdata->providerBooking as $booking) {
+            $booking_id = $booking->id;
+            $provider_name = optional($booking->provider)->display_name ?? '-';
+            $provider_image = getSingleMedia(optional($booking->provider), 'profile_image', null);
+            $provider_contact = optional($booking->provider)->contact_number ?? '-';
+            $provider_email = optional($booking->provider)->email ?? '-';
+            $amount = $booking->amount;
+            $payment_status = optional($booking->payment)->payment_status ?? '-';
+            $start_at = $booking->start_at;
+            $end_at = $booking->end_at;
+            $earningData[] = [
+                'provider_id' => $providerdata->id,
+                'booking_id' => $booking->id,
+                'provider_name' => $provider_name,
+                'provider_image' => $provider_image,
+                'provider_email' => $provider_email,
+                'provider_contact' => $provider_contact,
+                'amount' => $amount,
+                'payment_status' => $payment_status,
+                'start_at' => $start_at,
+                'end_at' => $end_at,
+            ];
+        }
+        if ($request->ajax()) {
+            return Datatables::of($earningData)
+                ->addIndexColumn()
+                ->addColumn('action', function ($row) {
+                    $btn = '-';
+                    $booking_id = $row['booking_id'];
+                    $btn = "<a href=" . route('booking.show', $booking_id) . "><i class='fas fa-eye'></i></a>";
+                    return $btn;
+                })
+                ->editColumn('provider_name', function ($row) {
+                    return view('booking.provider', compact('row'));
+                })
+                ->editColumn('payment_status', function ($row) {
+                    $payment_status = $row['payment_status'];
+                    if ($payment_status == 'pending') {
+                        $status = '<span class="badge badge-danger">' . __('messages.pending') . '</span>';
+                    } else {
+                        $status = '<span class="badge badge-success">' . __('messages.paid') . '</span>';
+                    }
+                    return  $status;
+                })
+                ->editColumn('start_at', function ($row) {
+                    if (is_array($row)) {
+                        $row = (object)$row;
+                    }
+                    $startAt = isset($row->start_at) ? $row->start_at : null;
+                    if ($startAt !== null) {
+                        $sitesetup = Setting::where('type', 'site-setup')->where('key', 'site-setup')->first();
+                        $datetime = $sitesetup ? json_decode($sitesetup->value) : null;
+                        $date = optional($datetime)->date_format && optional($datetime)->time_format
+                            ? date(optional($datetime)->date_format, strtotime($startAt)) . ' / ' . date(optional($datetime)->time_format, strtotime($startAt))
+                            : $startAt;
+                        return $date;
+                    }
+                    return null;
+                })
+                ->editColumn('end_at', function ($row) {
+                    if (is_array($row)) {
+                        $row = (object)$row;
+                    }
+                    $endAt = isset($row->end_at) ? $row->end_at : null;
+                    if ($endAt !== null) {
+                        $sitesetup = Setting::where('type', 'site-setup')->where('key', 'site-setup')->first();
+                        $datetime = $sitesetup ? json_decode($sitesetup->value) : null;
+                        $date = optional($datetime)->date_format && optional($datetime)->time_format
+                            ? date(optional($datetime)->date_format, strtotime($endAt)) . ' / ' . date(optional($datetime)->time_format, strtotime($endAt))
+                            : $endAt;
+                        return $date;
+                    }
+                    return null;
+                })
+                ->editColumn('amount', function ($row) {
+                    return $row['amount'] ? getPriceFormat($row['amount']) : '-';
+                })
+                ->rawColumns(['action', 'payment_status', 'amount', 'check'])
+                ->make(true);
+        }
+        if (empty($providerdata)) {
+            $msg = __('messages.not_found_entry', ['name' => __('messages.provider')]);
+            return redirect(route('provider.index'))->withError($msg);
+        }
+        $pageTitle = __('messages.booking');
+        return view('booking.details', compact('pageTitle', 'earningData', 'auth_user', 'providerdata'));
     }
 
-    if (!empty($remove_notification_id)) {
-      $search = "id" . '":' . $bookingdata->id;
-
-      Notification::whereIn('notifiable_id', $remove_notification_id)
-        ->whereJsonContains('data->id', $bookingdata->id)
-        ->delete();
+    public function bookingstatus(Request $request, $id)
+    {
+        $tabpage = $request->tabpage;
+        $auth_user = authSession();
+        $user_id = $auth_user->id;
+        $user_data = User::find($user_id);
+        $bookingdata = Booking::with('handymanAdded', 'payment', 'bookingExtraCharge', 'bookingAddonService')->myBooking()->find($id);
+        switch ($tabpage) {
+            case 'info':
+                $data  = view('booking.' . $tabpage, compact('user_data', 'tabpage', 'auth_user', 'bookingdata'))->render();
+                break;
+            case 'status':
+                $data  = view('booking.' . $tabpage, compact('user_data', 'tabpage', 'auth_user', 'bookingdata'))->render();
+                break;
+            default:
+                $data  = view('booking.' . $tabpage, compact('tabpage', 'auth_user', 'bookingdata'))->render();
+                break;
+        }
+        return response()->json($data);
     }
 
-    $bookingdata->provider()->associate($provider);
-    $bookingdata->status = 'pending';
-    $bookingdata->save();
-
-    $activity_data = [
-      'activity_type' => $activity_type,
-      'booking_id' => $bookingdata->id,
-      'booking' => $bookingdata,
-    ];
-
-    $this->sendNotification($activity_data);
-    $message = __('messages.save_form', ['form' => __('messages.booking')]);
-    if ($request->is('api/*')) {
-      return comman_message_response($message);
+    public function createPDF($id)
+    {
+        $data = AppSetting::take(1)->first();
+        $bookingdata = Booking::with('handymanAdded', 'payment', 'bookingExtraCharge')->myBooking()->find($id);
+        $pdf = Pdf::loadView('booking.invoice', ['bookingdata' => $bookingdata, 'data' => $data]);
+        return $pdf->download('invoice.pdf');
     }
 
-    return response()
-      ->json([
-        'status' => true,
-        'event' => 'callback',
-        'message' => $message,
-      ]);
-  }
+    public function updateStatus(Request $request)
+    {
 
+        switch ($request->type) {
+            case 'payment':
+                $data = Payment::where('booking_id', $request->bookingId)->update(['payment_status' => $request->status]);
+                break;
+            default:
 
+                $data = Booking::find($request->bookingId)->update(['status' => $request->status]);
+                break;
+        }
 
-  /**
-   * @Lee
-   *
-   * @param Request $request
-   * @return void
-   */
-  public function  definePriceForFixedServiceForm(Request $request)
-  {
-    $bookingdata = Booking::find($request->id);
-    $pageTitle = __('messages.define_price_title', ['form' => __('messages.define_price_title')]);
-    return view('booking.define_price_from_fixed_service', compact('bookingdata', 'pageTitle'));
-  }
-
-  /**
-   * Update the specified resource in storage.
-   *
-   * @param  \Illuminate\Http\Request  $request
-   * @param  int  $id
-   * @return \Illuminate\Http\Response
-   */
-  public function definePriceForFixedService(Request $request)
-  {
-    $bookingdata = Booking::find($request->id);
-
-    if ($request->has('price')) {
-      $validator = Validator::make($request->all(), [
-        'price' => 'required|numeric|min:' . $bookingdata->service->min_price_range . '|max:' . $bookingdata->service->max_price_range,
-      ]);
-
-      if ($validator->fails())
-        return redirect()->back()->withErrors($validator)->withInput();
-      $price = ($validator->validated())['price'];
-
-      $bookingdata->update([
-        'price' => $price,
-        'amount' => $price,
-        'status' => 'accept'
-      ]);
-
-      $activity_type = 'update_booking_status';
-      $activity_data = [
-        'activity_type' => $activity_type,
-        'booking_id' => $bookingdata->id,
-        'booking' => $bookingdata,
-      ];
-      $this->sendNotification($activity_data);
-
-      $calculateFinalPriceElement = $this->calcutateFinalPrice($bookingdata, true, '');
-      $bookingdata->update($calculateFinalPriceElement);
+        return comman_custom_response(['message' => 'Status Updated', 'status' => true]);
     }
 
-    $message = __('messages.update_form', ['form' => __('messages.booking')]);
+    public function saveBookingRating(Request $request)
+    {
+        $rating_data = $request->all();
+        $result = BookingRating::updateOrCreate(['id' => $request->id], $rating_data);
 
-    if ($request->is('api/*'))
-    return comman_message_response($message);
+        $message = __('messages.update_form', ['form' => __('messages.rating')]);
+        if ($result->wasRecentlyCreated)
+            $message = __('messages.save_form', ['form' => __('messages.rating')]);
 
-    return response()
-      ->json([
-        'status' => true,
-        'event' => 'callback',
-        'message' => $message,
-      ]);
-  }
+        return  redirect()->back()->withSuccess($message);
+    }
+
+    public function getPaymentMethod(Request $request)
+    {
+        $data = $request->all();
+        $data['datetime'] = now();
+
+        $data['payment_status'] = 'failed';
+
+        $payment_data = Payment::where('booking_id', $data['booking_id'])->first();
+
+        if (!empty($payment_data)) {
+            $payment_data->update($data);
+        } else {
+            $payment_data = Payment::create($data);
+        }
+        $sitesetup = Setting::where('type', 'site-setup')->where('key', 'site-setup')->first();
+        $sitesetupdata = $sitesetup ? json_decode($sitesetup->value, true) : null;
+
+        $country_id = $sitesetupdata['default_currency'] ?? null;
+        $country = Country::find($country_id);
+
+        $data['currency_code'] = $country ? $country->currency_code : "USD";
+
+        switch ($data['payment_type']) {
+            case 'stripe':
+                $data['payment_geteway_data'] = getPaymentMethodkey($data['payment_type']);
+                break;
+
+            default:
+
+                break;
+        }
+
+        return comman_custom_response($data);
+    }
+
+    public function createStripePayment(Request $request)
+    {
+
+        $data = $request->all();
+
+        $checkout_session = getstripepayments($data);
+
+        if (isset($checkout_session['message'])) {
+
+            return comman_custom_response($checkout_session);
+        } else {
+            Payment::where('booking_id', $data['booking_id'])->update(['other_transaction_detail' => $checkout_session['id']]);
+
+            return comman_custom_response($checkout_session);
+        }
+    }
+
+    public function saveStripePayment(Request $request, $id)
+    {
+        $type = $request->type;
+        $result = Payment::where('booking_id', $id)->first();
+        $stripe_session_id = $result->other_transaction_detail;
+        $payment_type = $result->payment_type;
+
+        $session_object = getstripePaymnetId($stripe_session_id, $payment_type);
+
+        if ($session_object['payment_intent'] !== '' && $session_object['payment_status'] == 'paid') {
+
+            $result->txn_id = $session_object['payment_intent'];
+
+            if ($type == 'advance_payment') {
+
+                $result->payment_status = 'advanced_paid';
+            } else {
+
+                $result->payment_status = 'paid';
+            }
+        };
+
+        $result->update();
+
+        $booking = Booking::find($id);
+        if (!empty($result) && $result->payment_status == 'advanced_paid') {
+            $booking->advance_paid_amount  = $result->total_amount;
+            $booking->status  = 'pending';
+        }
+        $booking->payment_id = $result->id;
+        $booking->update();
+
+        $activity_data = [
+            'activity_type' => 'payment_message_status',
+            'payment_status' =>  str_replace("_", " ", ucfirst($result->payment_status)),
+            'booking_id' => $booking->id,
+            'booking' => $booking,
+        ];
+        $this->sendNotification($activity_data);
+
+        return redirect('/booking-list');
+    }
+
+    /**
+     * Undocumented function
+     *
+     * @param [type] $result
+     * @param boolean $send_return
+     * @param string $operation_type_service_fixed
+     * @return void
+     */
+    private function calcutateFinalPrice($result, $send_return = false, $operation_type_service_fixed = 'store')
+    {
+        $data_final_price = [];
+
+        if ($operation_type_service_fixed == 'store') {
+            $data_final_price['final_total_service_price'] = 0;
+            $data_final_price['final_total_tax'] = 0;
+            $data_final_price['final_sub_total'] = 0;
+            $data_final_price['final_discount_amount'] = 0;
+            $data_final_price['final_coupon_discount_amount'] = 0;
+            $data_final_price['total_amount'] = 0;
+            $result->update($data_final_price);
+            return;
+        }
+
+        $data_final_price['final_total_service_price'] = $result->getServiceTotalPrice();
+        $data_final_price['final_total_tax'] = $result->getTaxesValue();
+        $data_final_price['final_sub_total'] = $result->getSubTotalValue();
+        $data_final_price['final_discount_amount'] = $result->getDiscountValue();
+        $data_final_price['final_coupon_discount_amount'] = $result->getCouponDiscountValue();
+        $data_final_price['total_amount'] = $result->getTotalValue();
+        if ($send_return == true)
+            return $data_final_price;
+
+        $result->update($data_final_price);
+    }
+
+    /**
+     * @Lee
+     *
+     * @param Request $request
+     * @return void
+     */
+    public function  bookingAssignProviderForm(Request $request)
+    {
+        $bookingdata = Booking::find($request->id);
+        $pageTitle = __('messages.assign_form_title', ['form' => __('messages.booking')]);
+        return view('booking.assigned_provider_form', compact('bookingdata', 'pageTitle'));
+    }
+
+    /**
+     * @Lee
+     *
+     * @param Request $request
+     * @return void
+     */
+    public function bookingAssignedProvider(Request $request)
+    {
+
+        $data = $request->validate([
+            'provider_id' => 'required|exists:users,id', // S'assurer que le provider_id existe dans la table des utilisateurs
+        ]);
+
+        //@todo Activity type verification
+        $bookingdata =  Booking::findOrFail($request->id);
+        $provider = User::findOrFail($data['provider_id']);
+
+        $assigned_provider_ids = [];
+        if ($bookingdata->providerAdded()->count() > 0) {
+            $assigned_provider_ids = $bookingdata->providerAdded()->pluck('provider_id')->toArray();
+            $bookingdata->providerAdded()->delete();
+            $message = __('messages.booking_transfer_to_provider', ['name' => $provider->display_name]);;
+            $activity_type = 'transfer_booking_to_provider';
+        } else {
+            $message =
+                __('messages.assigned_to_provider', ['name' => $provider->display_name]);;
+            $activity_type = 'assigned_booking_to_provider';
+        }
+
+        if (!empty($remove_notification_id)) {
+            $search = "id" . '":' . $bookingdata->id;
+
+            Notification::whereIn('notifiable_id', $remove_notification_id)
+                ->whereJsonContains('data->id', $bookingdata->id)
+                ->delete();
+        }
+
+        $bookingdata->provider()->associate($provider);
+        $bookingdata->status = 'pending';
+        $bookingdata->save();
+
+        $activity_data = [
+            'activity_type' => $activity_type,
+            'booking_id' => $bookingdata->id,
+            'booking' => $bookingdata,
+        ];
+
+        $this->sendNotification($activity_data);
+        $message = __('messages.save_form', ['form' => __('messages.booking')]);
+        if ($request->is('api/*')) {
+            return comman_message_response($message);
+        }
+
+        return response()
+            ->json([
+                'status' => true,
+                'event' => 'callback',
+                'message' => $message,
+            ]);
+    }
+
+
+
+    /**
+     * @Lee
+     *
+     * @param Request $request
+     * @return void
+     */
+    public function  definePriceForFixedServiceForm(Request $request)
+    {
+        $bookingdata = Booking::find($request->id);
+        $pageTitle = __('messages.define_price_title', ['form' => __('messages.define_price_title')]);
+        return view('booking.define_price_from_fixed_service', compact('bookingdata', 'pageTitle'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function definePriceForFixedService(Request $request)
+    {
+        $bookingdata = Booking::find($request->id);
+
+        if ($request->has('price')) {
+            $validator = Validator::make($request->all(), [
+                'price' => 'required|numeric|min:' . $bookingdata->service->min_price_range . '|max:' . $bookingdata->service->max_price_range,
+            ]);
+
+            if ($validator->fails())
+                return redirect()->back()->withErrors($validator)->withInput();
+            $price = ($validator->validated())['price'];
+
+            $bookingdata->update([
+                'price' => $price,
+                'amount' => $price,
+                'status' => 'accept'
+            ]);
+
+
+            $calculateFinalPriceElement = $this->calcutateFinalPrice($bookingdata, true, '');
+            $bookingdata->update($calculateFinalPriceElement);
+
+            $this->sendNotification([
+                'activity_type' => 'update_booking_status',
+                'booking_id' => $bookingdata->id,
+                'booking' => $bookingdata,
+            ]);
+
+            $this->sendNotification([
+                'activity_type' => 'define_price_of_service',
+                'booking_id' => $bookingdata->id,
+                'booking' => $bookingdata,
+            ]);
+        }
+
+        $message = __('messages.update_form', ['form' => __('messages.booking')]);
+
+        if ($request->is('api/*'))
+            return comman_message_response($message);
+
+        return response()
+            ->json([
+                'status' => true,
+                'event' => 'callback',
+                'message' => $message,
+            ]);
+    }
 }
