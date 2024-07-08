@@ -126,17 +126,17 @@
           >Free</span
         >
         <span
-          v-else-if="type_service === 'fixed' && min_price_range !== 0 && max_price_range !== 0"
+          v-else-if="type_service === 'fixed'"
           class="text-primary fw-500 d-inline-block position-relative font-size-18"
         >
-          {{ min_price_range + '.00' }} - {{ max_price_range + '.00' }} {{ currencySymbol }} :
+          {{ formatNumberWithSpace(min_price_range) + '.00' }} - {{ formatNumberWithSpace(max_price_range) + '.00 ' }} {{ currencySymbol }} :
           {{ capitalizeFirstLetter(type_service) }}
         </span>
         <span
           v-else-if="price !== 0 && type_service == 'hourly'"
           class="text-primary fw-500 d-inline-block position-relative font-size-18"
         >
-          {{ price }} : {{ capitalizeFirstLetter(type_service) }}
+          {{ formatNumberWithSpace(price) + '.00 ' }} : {{ capitalizeFirstLetter(type_service) }}
         </span>
       </li>
       <br />
@@ -279,6 +279,10 @@ const formatCurrencyVue = (value) => {
     return window.currencyFormat(value)
   }
   return value
+}
+
+const formatNumberWithSpace = (value) => {
+  return typeof value === 'number' ? value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") : value;
 }
 
 import { useI18n } from 'vue-i18n'

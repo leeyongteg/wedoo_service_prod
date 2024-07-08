@@ -78,10 +78,9 @@
             <li class="text-primary fw-500 d-inline-block position-relative font-size-18">Freee</li>
         @elseif($data->type == 'fixed' && $data->min_price_range !== 0 && $data->max_price_range !== 0)
             <li class="text-primary fw-500 d-inline-block position-relative font-size-18">
-
-                {{ getPriceFormatOnlyWithEndZero($data->min_price_range) .
+                {{ number_format(getPriceFormatOnlyWithEndZero($data->min_price_range), 0., '.', ' ') .
                     ' - ' .
-                    getPriceFormatOnlyWithEndZero($data->max_price_range) .
+                    number_format(getPriceFormatOnlyWithEndZero($data->max_price_range), 0., '.', ' ') .
                     ' ' .
                     getCurrencySymbol() .
                     ' : ' .
@@ -89,8 +88,8 @@
             </li>
         @elseif($data->price !== 0 && $data->type == 'hourly' && $data->max_price_range == 0)
             <li class="text-primary fw-500 d-inline-block position-relative font-size-18">
-                {{ getPriceFormat($data->price) }} :
-                {{ ucFirst($data->type) }}</li>
+                {{ number_format(getPriceFormatOnlyWithEndZero($data->price), 0., '.', ' ') . ' ' . getCurrencySymbol() }}
+                : {{ ucFirst($data->type) }}</li>
         @endif
         <br>
         @if (!empty($data->duration))
