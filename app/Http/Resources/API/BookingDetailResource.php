@@ -29,7 +29,7 @@ class BookingDetailResource extends JsonResource
             'address'            => $this->address,
             'customer_id'        => $this->customer_id,
             'service_id'         => $this->service_id,
-            'provider_id'        => $this->provider_id,
+            'provider_id'        => optional($this->provider_id),
             'quantity'           => $this->quantity,
             'price'              => optional($this->service)->price,
             'price_format'       => getPriceFormat(optional($this->service)->price),
