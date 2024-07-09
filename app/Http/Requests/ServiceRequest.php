@@ -30,28 +30,28 @@ class ServiceRequest extends FormRequest
             'name'                           => 'required|unique:services,name,' . $id,
             'category_id'                    => 'required',
             'type'                           => 'required',
-            'price'                          => 'required|min:0',
             'status'                         => 'required',
             'name' => 'required',
             'category_id' => 'required',
-            'price' => 'required|integer|min:0',
+            'price' => 'integer|min:0',
             'type' => 'required|in:fixed,hourly,free',
             'duration' => $this->input('type') === 'hourly' ? 'required' : 'nullable',
             'status' => 'required',
             'min_price_range' => [
                 $this->input('type') === 'fixed' ? 'required' : 'nullable',
-                'integer',
-                'min:3500'
+                $this->input('type') === 'fixed' ? 'integer' : '',
+                $this->input('type') === 'fixed' ? 'min:500' : 'min:0',
             ],
             'max_price_range' => [
                 $this->input('type') === 'fixed' ? 'required' : 'nullable',
-                'integer',
-                'min:5000'
+                $this->input('type') === 'fixed' ? 'integer' : '',
+                $this->input('type') === 'fixed' ? 'min:1000' : 'min:0',
+
             ],
             'price' => [
                 $this->input('type') === 'hourly' ? 'required' : 'nullable',
-                'integer',
-                'min:3500'
+                $this->input('type') === 'hourly' ? 'integer' : '',
+                $this->input('type') === 'hourly' ? 'min:500' : 'min:0',
             ],
         ];
     }

@@ -68,12 +68,12 @@
                                 <div class="form-row">
                                     <div class="col-md-6">
                                         {{ Form::label('min_price_range', __('messages.min_price') . ' <span class="text-danger">*</span>', ['class' => 'form-control-label'], false) }}
-                                        {{ Form::number('min_price_range', null, ['min' => 3500, 'step' => '500', 'placeholder' => __('messages.min_price'), 'class' => 'form-control', 'required']) }}
+                                        {{ Form::number('min_price_range', old('max_price_range'), ['placeholder' => __('messages.min_price'), 'class' => 'form-control']) }}
                                         <small class="help-block with-errors text-danger"></small>
                                     </div>
                                     <div class="col-md-6">
                                         {{ Form::label('max_price_range', __('messages.max_price') . ' <span class="text-danger">*</span>', ['class' => 'form-control-label'], false) }}
-                                        {{ Form::number('max_price_range', null, ['min' => 7500, 'step' => '500', 'placeholder' => __('messages.max_price'), 'class' => 'form-control', 'required']) }}
+                                        {{ Form::number('max_price_range',  old('max_price_range'), ['placeholder' => __('messages.max_price'), 'class' => 'form-control']) }}
                                         <small class="help-block with-errors text-danger"></small>
                                     </div>
                                 </div>
@@ -82,7 +82,7 @@
 
                             <div class="form-group col-md-4" id="price_div">
                                 {{ Form::label('price', __('messages.price') . ' <span class="text-danger">*</span>', ['class' => 'form-control-label'], false) }}
-                                {{ Form::text('price', null, ['min' => 1, 'step' => 'any', 'placeholder' => __('messages.price'), 'class' => 'form-control', 'required', 'id' => 'price', 'pattern' => '^\\d+(\\.\\d{1,2})?$']) }}
+                                {{ Form::number('price', old('price'), ['placeholder' => __('messages.price'), 'class' => 'form-control', 'required', 'id' => 'price', 'pattern' => '^\\d+(\\.\\d{1,2})?$']) }}
                                 <small class="help-block with-errors text-danger"></small>
                             </div>
 
@@ -256,11 +256,6 @@
                         'provideraddress=' + providerId);
                     window.location.href = providerAddressCreateUrl;
                 });
-
-
-
-
-
             });
 
             function selectprovider(selectElement) {
@@ -451,39 +446,59 @@
                 // @Lee
                 /** RANGE PRICE BY LEECHINGFU **/
 
-                const selectElement = $('select[name="type"]');
+                const selectElement = $('#price_type');
                 const rangePriceElement = $('#range_price');
                 const fixedPriceElement = $('#price_div');
+                const minPriceRangeInput = $('input[name="min_price_range"]');
+                const maxPriceRangeInput = $('input[name="max_price_range"]');
+                const regularPriceInput = $('input[name="price"]');
 
-                // $('#monInput').removeAttr('required');
-                // $('input[name="min_price"]').prop('disabled', true);
-                // $('input[name="max_price"]').prop('disabled', true);
+                const showElement = element => element.show();
+                const hideElement = element => element.hide();
 
-                function showElement(element) {
-                    element.show();
-                }
+                const updateElementsVisibility = () => {
 
-                function hideElement(element) {
-                    element.hide();
-                }
-
-                function updateElementsVisibility() {
                     if (selectElement.val() === 'fixed') {
                         showElement(rangePriceElement);
                         hideElement(fixedPriceElement);
-                        $('input[name="min_price_range"]').attr('required', 'required');
-                        $('input[name="max_price_range"]').attr('required', 'required');
-                        $('input[name="price"]').removeAttr('required');
-                    } else {
-                        showElement(fixedPriceElement);
+                        minPriceRangeInput.prop('required', true);
+                        maxPriceRangeInput.prop('required', true);
+                        regularPriceInput.prop('required', false);
+                        maxPriceRangeInput.prop('step', 500);
+                        minPriceRangeInput.prop('step', 500);
+                        regularPriceInput.prop('step', 'any');
+                        minPriceRangeInput.prop('min', 500);
+                        maxPriceRangeInput.prop('min', 1000);
+                        regularPriceInput.prop('min', 0);
+                        regularPriceInput.val = 500;
+                    } else if (selectElement.val() === 'hourly') {
                         hideElement(rangePriceElement);
-                        $('input[name="min_price_range"]').removeAttr('required');
-                        $('input[name="max_price_range"]').removeAttr('required');
-                        $('input[name="price"]').attr('required', 'required');
+                        showElement(fixedPriceElement);
+                        minPriceRangeInput.prop('required', false);
+                        maxPriceRangeInput.prop('required', false);
+                        regularPriceInput.prop('required', true);
+                        maxPriceRangeInput.prop('step', 'any');
+                        minPriceRangeInput.prop('step', 'any');
+                        regularPriceInput.prop('step', 500);
+                        minPriceRangeInput.prop('min', 0);
+                        regularPriceInput.prop('min', 500);
+                        maxPriceRangeInput.prop('min', 0);
+                    } else if (selectElement.val() === 'free') {
+                        hideElement(rangePriceElement);
+                        hideElement(fixedPriceElement);
+                        minPriceRangeInput.prop('required', false);
+                        maxPriceRangeInput.prop('required', false);
+                        regularPriceInput.prop('required', false);
+                        maxPriceRangeInput.prop('step', 'any');
+                        minPriceRangeInput.prop('step', 'any');
+                        regularPriceInput.prop('step', 'any');
+                        minPriceRangeInput.prop('min', 0);
+                        regularPriceInput.prop('min', 0);
+                        maxPriceRangeInput.prop('min', 0);
                     }
-                }
+                };
 
-                selectElement.change(updateElementsVisibility);
+                selectElement.on('change', updateElementsVisibility);
                 updateElementsVisibility();
 
                 /** END RANGE PRICE BY LEECHINGFU **/
