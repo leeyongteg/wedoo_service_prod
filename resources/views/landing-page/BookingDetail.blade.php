@@ -30,8 +30,8 @@
                                 <p class="text-capitalize font-size-18 fw-500 mb-2">
                                     {{ $bookingData['booking_detail']['booking_date'] }}</p>
                                 <!-- <div class="d-flex align-items-center lh-1 gap-1">
-                                                                {{-- {{> components/widgets/filter-rating rating="4"}}<span class="h6 lh-1">(4.3)</span> --}}
-                                                            </div> -->
+                                                                            {{-- {{> components/widgets/filter-rating rating="4"}}<span class="h6 lh-1">(4.3)</span> --}}
+                                                                        </div> -->
 
 
 
@@ -573,9 +573,9 @@
                                         </tbody>
                                     </table>
                                 </div>
-                                <!-- @if (count($bookingData['booking_detail']['extra_charges']) > 0 || !empty($bookingData['booking_detail']['payment_id']))
-    <span class="vr position-absolute h-100 d-lg-block d-none end-0 top-0"></span>
-    @endif -->
+                                {{-- @if (count($bookingData['booking_detail']['extra_charges']) > 0 || !empty($bookingData['booking_detail']['payment_id']))
+                                    <span class="vr position-absolute h-100 d-lg-block d-none end-0 top-0"></span>
+                                @endif --}}
                             </div>
                             <div class="px-lg-3 mt-5">
                                 @if (count($bookingData['booking_detail']['extra_charges']) > 0)
@@ -801,8 +801,8 @@
 
 
     <!-- ===================
-                                Review Modal
-                                ========================== -->
+                                            Review Modal
+                                            ========================== -->
     <div class="modal fade" id="ratingModal" aria-labelledby="ratingModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -879,8 +879,8 @@
     </div>
 
     <!-- ===================
-                                Status Modal
-                                ========================== -->
+                                            Status Modal
+                                            ========================== -->
     <div class="modal fade" id="statusModal" aria-labelledby="statusModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content overflow-visible">
@@ -952,8 +952,8 @@
     </div>
 
     <!-- ===================
-                                Reason Modal
-                                ========================== -->
+                                            Reason Modal
+                                            ========================== -->
     <div class="modal fade" id="reasonModal" aria-labelledby="reasonModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
