@@ -415,10 +415,17 @@ class FrontendController extends Controller
         $bookingController = app(BookingController::class);
         $apiRequest = new Request(['booking_id' => $booking_id]);
         $booking = $bookingController->getBookingDetail($apiRequest);
+        $bookingData = json_decode($booking->content(), true);
+
         $user = auth()->user();
+
+        if ($user->id != $bookingData['customer']['id']) {
+            $message = __('messages.booking_not_found');
+            return redirect(route('booking.list'), 302); //->withError($message);
+        }
+
         $wallet = $user->wallet;
         $wallet_amount =  $wallet->amount;
-        $bookingData = json_decode($booking->content(), true);
         $sitesetup = Setting::where('type', 'site-setup')->where('key', 'site-setup')->first();
         $date_time = $sitesetup ? json_decode($sitesetup->value, true) : null;
         return view('landing-page.BookingDetail', compact('booking', 'wallet_amount', 'date_time', 'bookingData'));
