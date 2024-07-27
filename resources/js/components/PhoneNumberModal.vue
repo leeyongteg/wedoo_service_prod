@@ -213,7 +213,7 @@ const formSubmit = handleSubmit(async (values) => {
         title: 'Error',
         text: 'check Your FreeMoPAY key Integration !',
         icon: 'error',
-        iconColor: '#5F60B9'
+        iconColor: '#F05034'
       }).then((result) => {})
     }
   } else {
@@ -223,7 +223,7 @@ const formSubmit = handleSubmit(async (values) => {
       title: 'Error',
       text: 'Something Went Wrong!',
       icon: 'error',
-      iconColor: '#5F60B9'
+      iconColor: '#F05034'
     }).then((result) => {})
   }
   IsLoading.value = false;
@@ -263,7 +263,7 @@ const createFreemoPay = async (data) => {
         title: 'Error',
         text: capitalizedMessage,
         icon: 'error',
-        iconColor: '#5F60B9'
+        iconColor: '#F05034'
       }).then((result) => {})
     }
   } else {
@@ -271,7 +271,7 @@ const createFreemoPay = async (data) => {
       title: 'Error',
       text: 'Something Went Wrong For Mobile Pay !',
       icon: 'error',
-      iconColor: '#5F60B9'
+      iconColor: '#F05034'
     }).then((result) => {})
   }
 }

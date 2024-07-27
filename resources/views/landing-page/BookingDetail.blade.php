@@ -1063,7 +1063,7 @@
                         title: 'Done',
                         text: data.message,
                         icon: 'success',
-                        iconColor: '#5F60B9'
+                        iconColor: '#F05034'
                     }).then((result) => {
                         if (result.isConfirmed) {
                             window.location.reload();
@@ -1126,7 +1126,7 @@
                 text: 'Do you want to end this service?',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#5F60B9',
+                confirmButtonColor: '#F05034',
                 cancelButtonColor: '#d33',
                 confirmButtonText: 'Yes',
                 cancelButtonText: 'No'

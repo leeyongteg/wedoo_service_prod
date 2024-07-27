@@ -213,7 +213,7 @@ const saveFavourite = async (values) => {
           title: 'Done',
           text: responseData.message,
           icon: 'success',
-          iconColor: '#5F60B9'
+          iconColor: '#F05034'
         }).then((result) => {
           if (result.isConfirmed) {
             window.location.reload()
@@ -246,7 +246,7 @@ const deleteFavourite = async (values) => {
         title: 'Done',
         text: responseData.message,
         icon: 'success',
-        iconColor: '#5F60B9'
+        iconColor: '#F05034'
       }).then((result) => {
         if (result.isConfirmed) {
           window.location.reload()

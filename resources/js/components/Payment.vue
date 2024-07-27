@@ -207,7 +207,7 @@ const formSubmit = handleSubmit(async (values) => {
             title: 'Done',
             text: responseData.message,
             icon: 'success',
-            iconColor: '#5F60B9'
+            iconColor: '#F05034'
           }).then((result) => {
             if (result.isConfirmed) {
               const baseUrl = document.querySelector('meta[name="baseUrl"]').getAttribute('content')
@@ -220,7 +220,7 @@ const formSubmit = handleSubmit(async (values) => {
             title: 'Error',
             text: 'Something Went Wrong!',
             icon: 'error',
-            iconColor: '#5F60B9'
+            iconColor: '#F05034'
           }).then((result) => {})
         }
       })
@@ -265,7 +265,7 @@ const formSubmit = handleSubmit(async (values) => {
           title: 'Error',
           text: 'check Your Stripe key Integration !',
           icon: 'error',
-          iconColor: '#5F60B9'
+          iconColor: '#F05034'
         }).then((result) => {})
       }
     } else {
@@ -275,7 +275,7 @@ const formSubmit = handleSubmit(async (values) => {
         title: 'Error',
         text: 'Something Went Wrong !',
         icon: 'error',
-        iconColor: '#5F60B9'
+        iconColor: '#F05034'
       }).then((result) => {})
     }
   }
@@ -301,7 +301,7 @@ const Openstripepayment = async (data) => {
         title: 'Error',
         text: responseData.message,
         icon: 'error',
-        iconColor: '#5F60B9'
+        iconColor: '#F05034'
       }).then((result) => {})
     } else {
       window.location.href = responseData.url
@@ -311,7 +311,7 @@ const Openstripepayment = async (data) => {
       title: 'Error',
       text: 'Something Went Wrong!',
       icon: 'error',
-      iconColor: '#5F60B9'
+      iconColor: '#F05034'
     }).then((result) => {})
   }
 }

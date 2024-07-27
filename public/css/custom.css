@@ -39,7 +39,7 @@
 }
 
 .select2-container--default .select2-results__option--highlighted[aria-selected] {
-    background-color:#5F60B9;
+    background-color: #F05034;
 }
 .select2-container {width: 100%!important;}
 
