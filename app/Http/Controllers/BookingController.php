@@ -17,15 +17,16 @@ use App\Models\ServiceAddon;
 use Illuminate\Http\Request;
 use App\Models\BookingRating;
 use App\Models\BookingStatus;
-use App\Models\PostJobRequest;
+use App\Models\PaymentGateway;
 
+use App\Models\PostJobRequest;
 use Yajra\DataTables\DataTables;
+use App\Service\FreemoPayService;
 use App\Traits\NotificationTrait;
 use App\Models\ProviderAddressMapping;
 use Illuminate\Support\Facades\Validator;
-use App\Http\Requests\BookingUpdateRequest;
 use App\Notifications\BookingNotification;
-use App\Service\FreemoPayService;
+use App\Http\Requests\BookingUpdateRequest;
 
 class BookingController extends Controller
 {
@@ -1057,9 +1058,22 @@ class BookingController extends Controller
         if ($data['payment_type'] !== 'freemopay')
         return null;
 
-        $appBaseUrl = $data['payment_geteway_data']['freemopay_link_api'];
-        $passwordApp = $data['payment_geteway_data']['freemopay_password_app'];
-        $userApp = $data['payment_geteway_data']['freemopay_username_app'];
+        $pay_setting =  PaymentGateway::where('type', $data['payment_type'])->first();
+
+        $appBaseUrl = '';
+        $userApp = '';
+        $passwordApp = '';
+
+        if ($pay_setting->status == 1) {
+            $value = json_decode($pay_setting->value, true);
+            $liveValue = json_decode($pay_setting->live_value, true);
+
+            // Extraire les valeurs en fonction de is_test
+            $appBaseUrl = $pay_setting->is_test == 0 ? $liveValue['freemopay_link_api'] : $value['freemopay_link_api'];
+            $userApp = $pay_setting->is_test == 0 ? $liveValue['freemopay_username_app'] : $value['freemopay_username_app'];
+            $passwordApp = $pay_setting->is_test == 0 ? $liveValue['freemopay_password_app'] : $value['freemopay_password_app'];
+        }
+
         $freeMoPaymentService = new FreemoPayService($appBaseUrl, $userApp, $passwordApp);
 
         $payer = $request->input('phone_number');
@@ -1070,8 +1084,7 @@ class BookingController extends Controller
             // Gérer le cas où aucune donnée de paiement n'est trouvée pour l'ID de réservation
             return response()->json(['error' => 'Payment data not found for the provided booking ID'], 404);
 
-        $initPaymentResult = $freeMoPaymentService->initPayment($payer, 100);
-        // $initPaymentResult = $freeMoPaymentService->initPayment($payer, $payment_booking_data->total_amount);
+        $initPaymentResult = $freeMoPaymentService->initPayment($payer, $payment_booking_data->total_amount);
 
         if (isset($initPaymentResult->code)) {
             $payment_booking_data->other_transaction_detail = json_encode($initPaymentResult);
@@ -1080,7 +1093,6 @@ class BookingController extends Controller
             $payment_booking_data->other_transaction_detail = json_encode($initPaymentResult);
             $init_freemo_pay_detail  = $freeMoPaymentService->getPaymentStatus($initPaymentResult->reference);
             $payment_booking_data->other_transaction_detail = json_encode($init_freemo_pay_detail);
-
             $payment_booking_data->payment_status = 'pending';
         }
 

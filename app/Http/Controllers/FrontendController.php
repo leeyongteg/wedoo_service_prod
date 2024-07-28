@@ -2,34 +2,35 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\API\ServiceController;
-use App\Http\Controllers\API\BlogController;
-use App\Http\Controllers\API\User\UserController;
-use App\Http\Controllers\API\BookingController;
-use App\Http\Controllers\API\PostJobRequestController;
-use Illuminate\Http\Request;
-use App\Models\Category;
-use App\Models\SubCategory;
-use App\Models\Service;
-use App\Models\User;
-use App\Models\Coupon;
-use App\Models\Setting;
-use App\Models\Blog;
-use App\Models\Booking;
-use App\Models\BookingRating;
-use App\Models\BookingHandymanMapping;
-use App\Models\UserFavouriteService;
-use App\Models\ServicePackage;
-use App\Models\ProviderTaxMapping;
-use App\Models\PostJobRequest;
-use App\Models\ServiceAddon;
-use App\Models\FrontendSetting;
-use Yajra\DataTables\DataTables;
 use Auth;
-use App\Models\HandymanRating;
-use App\Models\ProviderServiceAddressMapping;
 use Carbon\Carbon;
 use App\Models\Tax;
+use App\Models\Blog;
+use App\Models\User;
+use App\Models\Coupon;
+use App\Models\Booking;
+use App\Models\Service;
+use App\Models\Setting;
+use App\Models\Category;
+use App\Models\SubCategory;
+use App\Models\ServiceAddon;
+use Illuminate\Http\Request;
+use App\Models\BookingRating;
+use App\Models\HandymanRating;
+use App\Models\PostJobRequest;
+use App\Models\ServicePackage;
+use App\Models\FrontendSetting;
+use Yajra\DataTables\DataTables;
+use App\Models\ProviderTaxMapping;
+use Illuminate\Support\Facades\App;
+use App\Models\UserFavouriteService;
+use App\Models\BookingHandymanMapping;
+use App\Http\Controllers\API\BlogController;
+use App\Models\ProviderServiceAddressMapping;
+use App\Http\Controllers\API\BookingController;
+use App\Http\Controllers\API\ServiceController;
+use App\Http\Controllers\API\User\UserController;
+use App\Http\Controllers\API\PostJobRequestController;
 
 class FrontendController extends Controller
 {
@@ -49,6 +50,43 @@ class FrontendController extends Controller
         foreach ($sectionKeys as $key) {
             $section = FrontendSetting::where('key', $key)->first();
             $sectionData[$key] = $section ? json_decode($section->value, true) : null;
+        }
+
+        if (App::currentLocale() == 'fr') {
+            $frenchData = [
+                'section_1' => [
+                    'title' => 'Accédez instantanément au service de dépannage.',
+                    'description' => 'Vivez la simplicité : faites confiance à notre service de réparateur. Des réparations aux installations, comptez sur les petites mains de nos artisans. Votre assistance domestique !'
+                ],
+                'section_2' => [
+                    'title' => 'Nos Principales Catégories'
+                ],
+                'section_3' => [
+                    'title' => 'Services Les Mieux Notés'
+                ],
+                'section_4' => [
+                    'title' => 'Services en vedette'
+                ],
+                'section_5' => [
+                    'title' => 'Augmentez Vos Revenus et Votre Expertise en Nous Rejoignant.',
+                    'description' => 'Artisan Dévoué, Offrant un Service Exceptionnel. Expertise Eprouvée pour des Résultats de Qualité et une Satisfaction Client. Ensemble, Faisons Grandir Votre Projet.'
+                ],
+                'section_6' => [
+                    'title' => 'Améliorez Votre Expérience avec Notre Application.',
+                    'description' => 'Découvrez une Gamme de Services de Bricolage et Restez informé des Dernières Offres et Promotions en Téléchargeant Notre Application !'
+                ],
+                'section_9' => [
+                    'title' => 'Nos clients de confiance',
+                    'description' => 'La perfection en pratique : 99,9 % de clients satisfaits, plus de 500 avis et 5 068 services livrés avec succès.'
+                ]
+            ];
+
+            foreach ($frenchData as $key => $data) {
+                $sectionData[$key]['title'] = $data['title'];
+                if (isset($data['description'])) {
+                    $sectionData[$key]['description'] = $data['description'];
+                }
+            }
         }
         $settings = Setting::where('type', 'service-configurations')->where('key', 'service-configurations')->first();
         $serviceconfig = $settings ? json_decode($settings->value) : null;
@@ -675,7 +713,7 @@ class FrontendController extends Controller
             ->editColumn('name', function ($data) {
                 $providers_service_rating = (float) 0;
             $providers_service_rating = (isset($data->getServiceRating) && count($data->getServiceRating) > 0) ?
-            (float) number_format(max($data->getServiceRating->avg('rating'), 0), 2) : 0;
+                (float) number_format(max($data->getServiceRating->avg('rating'), 0), 2) : 0;
 
             return view('provider.datatable-card', compact('data', 'providers_service_rating'));
             })

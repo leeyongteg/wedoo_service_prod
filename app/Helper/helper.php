@@ -329,7 +329,6 @@ function envChanges($type, $value)
 /** @Lee */
 function getCurrencySymbol()
 {
-
     $sitesetup = App\Models\Setting::where('type', 'site-setup')->where('key', 'site-setup')->first();
     $sitesetupdata = $sitesetup ? json_decode($sitesetup->value) : null;
     $currencyId = optional($sitesetupdata)->default_currency;
@@ -337,6 +336,7 @@ function getCurrencySymbol()
 
     return    $country->symbol;
 }
+
 /** @Lee */
 function getPriceFormatOnlyWithEndZero($price)
 {
@@ -1014,7 +1014,7 @@ function get_handyman_provider_commission($handyman_id)
 function adminEarning()
 {
     $revenuedata = \App\Models\Payment::selectRaw('sum(total_amount) as total , booking_id, DATE_FORMAT(datetime , "%m") as month')
-    ->whereYear('datetime', date('Y'))
+        ->whereYear('datetime', date('Y'))
         ->where('payment_status', 'paid')
         ->groupBy('month');
     $revenuedata = $revenuedata->get()->toArray();
@@ -1368,7 +1368,7 @@ function today_cash_total($user_id, $to = '', $from = '', $type = '')
             ->where('action', 'handyman_approved_cash')
             ->where(function ($query) use ($from, $to) {
                 $query->where('status', 'approved_by_handyman')
-                ->orWhere('status', 'send_to_provider');
+            ->orWhere('status', 'send_to_provider');
             })
             ->whereDate('datetime', '>=', $from)
             ->whereDate('datetime', '<=', $to)
@@ -1380,7 +1380,7 @@ function today_cash_total($user_id, $to = '', $from = '', $type = '')
             ->where('action', 'handyman_send_provider')
             ->where(function ($query) use ($from, $to) {
                 $query->where('status', 'pending_by_admin')
-                ->orWhere('status', 'approved_by_provider');
+            ->orWhere('status', 'approved_by_provider');
             })
             ->whereDate('datetime', '>=', $from)
             ->whereDate('datetime', '<=', $to)
@@ -1399,8 +1399,8 @@ function total_cash($user_id)
         $amount = \App\Models\PaymentHistory::where('receiver_id', $user_id)
             ->where(function ($query) {
                 $query->where('action', 'handyman_approved_cash')
-                ->where('status', 'approved_by_handyman')
-                ->orWhere('status', 'send_to_provider');
+            ->where('status', 'approved_by_handyman')
+            ->orWhere('status', 'send_to_provider');
             })
             ->sum('total_amount');
     }
@@ -1409,8 +1409,8 @@ function total_cash($user_id)
         $amount = \App\Models\PaymentHistory::where('receiver_id', $user_id)
             ->where(function ($query) {
                 $query->where('action', 'handyman_send_provider')
-                ->where('status', 'approved_by_provider')
-                ->orWhere('status', 'pending_by_admin');
+            ->where('status', 'approved_by_provider')
+            ->orWhere('status', 'pending_by_admin');
             })
             ->sum('total_amount');
     }
@@ -1701,7 +1701,8 @@ function create_stripe_transfer($data)
 
         \Stripe\Stripe::setApiKey($data['secret_key']);
 
-        $transfer = \Stripe\Transfer::create(["amount" => $data['amount'] * 100,
+        $transfer = \Stripe\Transfer::create([
+            "amount" => $data['amount'] * 100,
             "currency" =>  $data['currency'],
             "destination" => $data['stripe_account'],
         ]);
@@ -1734,7 +1735,8 @@ function create_bank_tranfer($data)
 
         \Stripe\Stripe::setApiKey($data['secret_key']);
 
-        $payout = \Stripe\Payout::create(['amount' => $data['amount'] * 100,
+        $payout = \Stripe\Payout::create([
+            'amount' => $data['amount'] * 100,
             'currency' => $data['currency'],
         ], [
             'stripe_account' => $data['stripe_account'],
@@ -1802,16 +1804,20 @@ function formatCurrency($number, $noOfDecimal, $currencyPosition, $currencySymbo
 
 function getPaymentMethodkey($type)
 {
-  $pyament_gateway_data = App\Models\PaymentGateway::query()->where('type', $type)->first();
+    $pyament_gateway_data = App\Models\PaymentGateway::query()->where('type', $type)->first();
 
-  if ($pyament_gateway_data) {
-    $payment_geteway_value = $pyament_gateway_data->is_test == 1 ?
-      json_decode($pyament_gateway_data->value, true) :
-      json_decode($pyament_gateway_data->live_value, true);
-    return $payment_geteway_value;
-  }
+    if ($pyament_gateway_data) {
+        $payment_geteway_value = $pyament_gateway_data->is_test == 1 ?
+            json_decode($pyament_gateway_data->value, true) :
+            json_decode($pyament_gateway_data->live_value, true);
+        if ($type == 'freemopay') {
+            unset($payment_geteway_value["freemopay_username_app"]);
+            unset($payment_geteway_value["freemopay_password_app"]);
+        };
+        return $payment_geteway_value;
+    }
 
-  return null;
+    return null;
 }
 
 function getstripepayments($data)
@@ -1826,7 +1832,8 @@ function getstripepayments($data)
 
     try {
         $stripe = new \Stripe\StripeClient($stripe_secret);
-        $checkout_session = $stripe->checkout->sessions->create(['success_url' => $baseURL . '/save-stripe-payment/' . $data['booking_id'] . '?type=' . $data['type'],
+        $checkout_session = $stripe->checkout->sessions->create([
+            'success_url' => $baseURL . '/save-stripe-payment/' . $data['booking_id'] . '?type=' . $data['type'],
             'payment_method_types' => ['card'],
             'billing_address_collection' => 'required',
             'line_items' => [
@@ -1911,7 +1918,8 @@ function addWalletAmount($data)
     try {
         // Create the Stripe checkout session
         $stripe = new \Stripe\StripeClient($stripe_secret);
-        $checkout_session = $stripe->checkout->sessions->create(['success_url' => $baseURL . '/save-wallet-stripe-payment/' . $data['customer_id'] . '?amount=' . $data['amount'], // Use the route name
+        $checkout_session = $stripe->checkout->sessions->create([
+            'success_url' => $baseURL . '/save-wallet-stripe-payment/' . $data['customer_id'] . '?amount=' . $data['amount'], // Use the route name
             'payment_method_types' => ['card'],
             'billing_address_collection' => 'required',
             'line_items' => [
@@ -1959,31 +1967,4 @@ function fcm($fields)
     $response = curl_exec($ch);
 
     curl_close($ch);
-}
-
-/** @Lee */
-function getFreeMoPayToken($username, $password, $api_base_url)
-{
-  $curl = curl_init();
-
-  curl_setopt_array($curl, array(
-    CURLOPT_URL => "$api_base_url/api/v1/app/token",
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_ENCODING => '',
-    CURLOPT_MAXREDIRS => 10,
-    CURLOPT_TIMEOUT => 0,
-    CURLOPT_FOLLOWLOCATION => true,
-    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-    CURLOPT_CUSTOMREQUEST => 'POST',
-    CURLOPT_POSTFIELDS => json_encode(array('user' => $username, 'password' => $password)),
-    CURLOPT_HTTPHEADER => array(
-      'Content-Type: application/json'
-    ),
-  ));
-
-  $response = curl_exec($curl);
-
-  curl_close($curl);
-
-  return $response;
 }

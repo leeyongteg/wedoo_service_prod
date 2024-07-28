@@ -227,12 +227,11 @@ const formSubmit = handleSubmit(async (values) => {
     }).then((result) => {})
   }
   IsLoading.value = false;
-  console.log(7777777777777)
+  console.log(7777777)
 })
 
 const createFreemoPay = async (data) => {
   const csrfToken = document.querySelector('meta[name="csrf-token"]').content
-  console.log(99999999)
 
   const res = await fetch(GET_FREEMOPAY_PAYMENT_URL, {
     method: 'POST',
