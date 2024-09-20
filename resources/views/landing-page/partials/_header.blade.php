@@ -1,5 +1,5 @@
 <header>
-      @php  
+      @php
          $headerSection = App\Models\FrontendSetting::where('key', 'heder-menu-setting')->first();
          $sectionData = $headerSection ? json_decode($headerSection->value, true) : null;
       @endphp
@@ -34,7 +34,7 @@
                   @if($sectionData['enable_language'] == 1)
                      <a class="dropdown text-white d-flex align-items-center" data-bs-toggle="dropdown" href="#"
                         role="button" aria-haspopup="true" aria-expanded="true">
-                        {{strtoupper(app()->getLocale())}}
+                        {{strtoupper( session('locale') ?:  app()->getLocale())}}
                         <svg width="8" class="ms-1 transform-up" viewBox="0 0 12 8" fill="none"
                            xmlns="http://www.w3.org/2000/svg">
                            <path fill-rule="evenodd" clip-rule="evenodd"

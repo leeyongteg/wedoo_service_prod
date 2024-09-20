@@ -26,17 +26,36 @@
                         ],
                         false,
                     ) }}
-                    <span class="pl-2"> {{ __('messages.price_ranger') }}
-                        ({{ $bookingdata->service->min_price_range }} -
-                        {{ $bookingdata->service->max_price_range }}) </span>
-                    {{ Form::number('price', $bookingdata->price ?? null, [
-                        'min' => $bookingdata->service->min_price_range,
-                        'max' => $bookingdata->service->max_price_range,
-                        'step' => '500',
-                        'placeholder' => __('messages.price'),
-                        'class' => 'form-control',
-                        'required',
-                    ]) }}
+
+                    <span class="pl-2">
+                        @if ($bookingdata->service->type == 'fixed')
+                            {{ __('messages.price_ranger') }}
+                            ({{ $bookingdata->service->min_price_range }} -
+                            {{ $bookingdata->service->max_price_range }})
+                        @endif
+                    </span>
+                    @php
+
+                        $validation_array = [
+                            'min' => $bookingdata->service->min_price_range,
+                            'max' => $bookingdata->service->max_price_range,
+                            'step' => '500',
+                            'placeholder' => __('messages.price'),
+                            'class' => 'form-control',
+                            'required',
+                        ];
+
+                        if ($bookingdata->service->type == 'estimate') {
+                            $validation_array = [
+                                'min' => 100000,
+                                'step' => '10000',
+                                'placeholder' => __('messages.price'),
+                                'class' => 'form-control',
+                                'required',
+                            ];
+                        }
+                    @endphp
+                    {{ Form::number('price', $bookingdata->price ?? null, $validation_array) }}
                 </div>
                 {{-- End Price --}}
 

@@ -160,7 +160,7 @@
                                     <div class="text-center">
                                         <a href="{{ route('service.detail', $service->id) }}" class="text-body">
                                             <img src="{{ url($mediaServiceImages->first()->getUrl()) }}" alt="service-image" style="width: 100px; height: auto;">
-                                            <span class="mt-2 line-count-2 popular-service-text">{{$service->name}}</span>
+                                            <span class="mt-2 line-count-2 popular-service-text">{{getNameForLocale($service)}}</span>
                                         </a>
                                     </div>
                                 </li>

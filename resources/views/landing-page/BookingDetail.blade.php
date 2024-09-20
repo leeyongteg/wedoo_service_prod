@@ -22,7 +22,7 @@
                                 @if ($bookingData['bookingpackage'] == null)
                                     <h5 class="text-capitalize mb-2 mt-2">#{{ $bookingData['booking_detail']['id'] }} <a
                                             href="{{ route('service.detail', $bookingData['booking_detail']['service_id']) }}">
-                                            {{ $bookingData['booking_detail']['service_name'] }}</a></h5>
+                                            {{ $bookingData['service']['name'] }}</a></h5>
                                 @else
                                     <h5 class="text-capitalize mb-2 mt-2">#{{ $bookingData['booking_detail']['id'] }}
                                         {{ $bookingData['bookingpackage']['name'] }}</h5>
@@ -30,8 +30,8 @@
                                 <p class="text-capitalize font-size-18 fw-500 mb-2">
                                     {{ $bookingData['booking_detail']['booking_date'] }}</p>
                                 <!-- <div class="d-flex align-items-center lh-1 gap-1">
-                                                                            {{-- {{> components/widgets/filter-rating rating="4"}}<span class="h6 lh-1">(4.3)</span> --}}
-                                                                        </div> -->
+                                                                                {{-- {{> components/widgets/filter-rating rating="4"}}<span class="h6 lh-1">(4.3)</span> --}}
+                                                                            </div> -->
 
 
 
@@ -801,8 +801,8 @@
 
 
     <!-- ===================
-                                            Review Modal
-                                            ========================== -->
+                                                Review Modal
+                                                ========================== -->
     <div class="modal fade" id="ratingModal" aria-labelledby="ratingModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -879,8 +879,8 @@
     </div>
 
     <!-- ===================
-                                            Status Modal
-                                            ========================== -->
+                                                Status Modal
+                                                ========================== -->
     <div class="modal fade" id="statusModal" aria-labelledby="statusModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content overflow-visible">
@@ -952,8 +952,8 @@
     </div>
 
     <!-- ===================
-                                            Reason Modal
-                                            ========================== -->
+                                                Reason Modal
+                                                ========================== -->
     <div class="modal fade" id="reasonModal" aria-labelledby="reasonModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">

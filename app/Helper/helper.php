@@ -1,7 +1,9 @@
 <?php
 
-use \Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use \Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\Session;
 
 function authSession($force = false)
 {
@@ -1368,7 +1370,7 @@ function today_cash_total($user_id, $to = '', $from = '', $type = '')
             ->where('action', 'handyman_approved_cash')
             ->where(function ($query) use ($from, $to) {
                 $query->where('status', 'approved_by_handyman')
-            ->orWhere('status', 'send_to_provider');
+                    ->orWhere('status', 'send_to_provider');
             })
             ->whereDate('datetime', '>=', $from)
             ->whereDate('datetime', '<=', $to)
@@ -1380,7 +1382,7 @@ function today_cash_total($user_id, $to = '', $from = '', $type = '')
             ->where('action', 'handyman_send_provider')
             ->where(function ($query) use ($from, $to) {
                 $query->where('status', 'pending_by_admin')
-            ->orWhere('status', 'approved_by_provider');
+                    ->orWhere('status', 'approved_by_provider');
             })
             ->whereDate('datetime', '>=', $from)
             ->whereDate('datetime', '<=', $to)
@@ -1399,8 +1401,8 @@ function total_cash($user_id)
         $amount = \App\Models\PaymentHistory::where('receiver_id', $user_id)
             ->where(function ($query) {
                 $query->where('action', 'handyman_approved_cash')
-            ->where('status', 'approved_by_handyman')
-            ->orWhere('status', 'send_to_provider');
+                    ->where('status', 'approved_by_handyman')
+                    ->orWhere('status', 'send_to_provider');
             })
             ->sum('total_amount');
     }
@@ -1409,8 +1411,8 @@ function total_cash($user_id)
         $amount = \App\Models\PaymentHistory::where('receiver_id', $user_id)
             ->where(function ($query) {
                 $query->where('action', 'handyman_send_provider')
-            ->where('status', 'approved_by_provider')
-            ->orWhere('status', 'pending_by_admin');
+                    ->where('status', 'approved_by_provider')
+                    ->orWhere('status', 'pending_by_admin');
             })
             ->sum('total_amount');
     }
@@ -1967,4 +1969,15 @@ function fcm($fields)
     $response = curl_exec($ch);
 
     curl_close($ch);
+}
+
+
+
+function getNameForLocale($element)
+{
+    $locale = session()->get('locale') ?: Cookie::get('locale') ?: app()->getLocale();
+
+    $jsonName = json_decode($element->name);
+
+    return $jsonName->{$locale};
 }

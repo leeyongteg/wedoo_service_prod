@@ -748,7 +748,7 @@ const decrement = () => {
 }
 
 const subtotal = computed(() => {
-  return 958
+
   if (coupondiscount.value > 0) {
     if (props.serviceaddon) {
       rests =

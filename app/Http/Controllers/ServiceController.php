@@ -10,7 +10,9 @@ use Yajra\DataTables\DataTables;
 use Illuminate\Support\Facades\DB;
 use App\Models\UserFavouriteService;
 use App\Http\Requests\ServiceRequest;
+use App\Http\Resources\API\ServiceResource;
 use App\Models\ProviderAddressMapping;
+use Illuminate\Support\Facades\Cookie;
 
 class ServiceController extends Controller
 {
@@ -40,8 +42,8 @@ class ServiceController extends Controller
         $filter = $request->filter;
 
         $extract_arr = (auth()->user()->hasAnyRole(['admin'])) ?
-        ['action', 'status', 'check', 'name', 'provider_id'] :
-        ['action', 'status', 'check', 'name', 'subscribe'];
+            ['action', 'status', 'check', 'name', 'provider_id'] :
+            ['action', 'status', 'check', 'name', 'subscribe'];
 
 
         if ($filter['column_status'] == null)
@@ -71,14 +73,16 @@ class ServiceController extends Controller
                 $query->where('service_package_id', $servicepackage);
             });
         }
-
         return $datatable->eloquent($query)
             ->addColumn('check', function ($row) {
                 return '<input type="checkbox" class="form-check-input select-table-row"  id="datatable-row-' . $row->id . '"  name="datatable_ids[]" value="' . $row->id . '" data-type="service" onclick="dataTableRowCheck(' . $row->id . ',this)">';
             })
             ->editColumn('name', function ($query) {
                 if (auth()->user()->can('service edit')) {
-                    $link =  '<a class="btn-link btn-link-hover" href=' . route('service.create', ['id' => $query->id]) . '>' . $query->name . '</a>';
+                    $locale = session()->get('locale') ?: Cookie::get('locale') ?: app()->getLocale();
+                    $jsonName = json_decode($query->name);
+                    $name = $jsonName->{$locale};
+                    $link =  '<a class="btn-link btn-link-hover" href=' . route('service.create', ['id' => $query->id]) . '>' . $name . '</a>';
                 } else {
                     $link = $query->name;
                 }
@@ -271,7 +275,6 @@ class ServiceController extends Controller
             $services['max_price_range'] = 0;
             $services['price'] = 0;
         }
-        // dd($services);
 
         $services['service_type'] = !empty($request->service_type) ? $request->service_type : 'service';
         $services['provider_id'] = !empty($request->provider_id) ? $request->provider_id : auth()->user()->id;
@@ -498,14 +501,20 @@ class ServiceController extends Controller
         $auth_user = authSession();
 
         $servicedata = Service::find($id);
+
         $provider_service_adrress_mappings = $servicedata->providerAddressMappings
             ->pluck('id')
             ->implode(',');
         $provider_address_mapping = ProviderAddressMapping::where('status', 1)
-        ->where('provider_id', $auth_user->id)
+            ->where('provider_id', $auth_user->id)
             ->pluck('id')
             ->implode(',');
-        $pageTitle = __('messages.subsctibe_to_service_form_title', ['form' => __('messages.service')]) . ' ' .  $servicedata->name;
+
+        $locale =  $data['locale'] = session()->get('locale') ?: Cookie::get('locale') ?: app()->getLocale();
+        $jsonName = json_decode($servicedata->name);
+        $name = $jsonName->$locale;
+
+        $pageTitle = __('messages.subsctibe_to_service_form_title', ['form' => __('messages.service')]) . ' ' .  $name;
         return view(
             'service.subcribe',
             compact(

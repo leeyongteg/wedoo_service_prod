@@ -56,7 +56,8 @@
         <h5 class="c1 mb-2">{{ __('messages.cash_after') }}</h5>
         <p><span>{{ __('messages.amount') }} :
             </span>
-            @if ($bookingdata->service->type != 'fixed')
+            @if ($bookingdata->service->type != 'fixed' || $bookingdata->service->type != 'estimate')
+
                 <strong>{{ !empty($bookingdata->total_amount) ? getPriceFormat($bookingdata->total_amount) : 0 }}</strong>
             @else
                 @if ($bookingdata->price != 0)
@@ -236,15 +237,20 @@
             </tr>
         </thead>
         <tbody>
+            @php
+                $locale = session()->get('locale') ?: Cookie::get('locale') ?: app()->getLocale();
+                $jsonName = json_decode(optional($bookingdata->service)->name);
+                $name = $jsonName->{$locale};
+            @endphp
             <tr>
                 <td class="text-wrap ps-lg-3">
                     <div class="d-flex flex-column">
-                        <a href=""
-                            class="booking-service-link fw-bold">{{ optional($bookingdata->service)->name ?? '-' }}</a>
+
+                        <a href="" class="booking-service-link fw-bold">{{ $name ?? '-' }}</a>
                     </div>
                 </td>
                 <td>
-                    @if ($bookingdata->service->type == 'fixed')
+                    @if ($bookingdata->service->type == 'fixed' || $bookingdata->service->type == 'estimate')
                         @if ($bookingdata->price != 0)
                             {{ getPriceFormat($bookingdata->amount) }}
                         @else
@@ -256,7 +262,7 @@
                 </td>
                 <td>{{ !empty($bookingdata->quantity) ? $bookingdata->quantity : 0 }}</td>
                 <td class="text-end">
-                    @if ($bookingdata->service->type == 'fixed')
+                    @if ($bookingdata->service->type == 'fixed' || $bookingdata->service->type == 'estimate')
                         @if ($bookingdata->price != 0)
                             {{ getPriceFormat($bookingdata->final_total_service_price) }}
                         @else
@@ -272,11 +278,15 @@
 </div>
 {{-- @Lee --}}
 @php
-    $price = $bookingdata->service->type == 'fixed' ? $bookingdata->price : $bookingdata->service->price;
+    $price =
+        $bookingdata->service->type == 'fixed' || $bookingdata->service->type == 'estimate'
+            ? $bookingdata->price
+            : $bookingdata->service->price;
 @endphp
+
 <div class="row justify-content-end mt-3">
     <div class="col-sm-10 col-md-6 col-xl-5">
-        @if ($price == 0 && $bookingdata->service->type == 'fixed')
+        @if ($price == 0 && ($bookingdata->service->type == 'fixed' || $bookingdata->service->type == 'estimate'))
             <div class="table-responsive bk-summary-table">
                 <table class="table-sm title-color align-right w-100">
                     <tbody>

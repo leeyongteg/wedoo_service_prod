@@ -25,6 +25,7 @@ use App\Models\ProviderTaxMapping;
 use Illuminate\Support\Facades\App;
 use App\Models\UserFavouriteService;
 use App\Models\BookingHandymanMapping;
+use Illuminate\Support\Facades\Cookie;
 use App\Http\Controllers\API\BlogController;
 use App\Models\ProviderServiceAddressMapping;
 use App\Http\Controllers\API\BookingController;
@@ -325,6 +326,11 @@ class FrontendController extends Controller
             $subtotal = ['min_range_price' => $subtotal_min, 'max_range_price' =>  $subtotal_max];
         }
 
+        $locale = session()->get('locale') ?: Cookie::get('locale') ?: app()->getLocale();
+
+        $serviceData['service_detail']['name'] = (json_decode($serviceData['service_detail']['name'])->{$locale});
+        $serviceData['service_detail']['description'] = (json_decode($serviceData['service_detail']['description'])->{$locale});
+
         $total_ratings = BookingRating::where('service_id', $serviceData['service_detail']['id'])->get();
         return view('landing-page.ServiceDetail', compact('serviceData', 'favouriteService', 'date_time', 'subtotal', 'total_ratings', 'favouriteServiceData', 'userId'));
     }
@@ -371,10 +377,10 @@ class FrontendController extends Controller
         $service->total_rating = $total_reviews > 0 ? number_format($total_rating / $total_reviews, 2) : 0;
 
         $coupons = Coupon::where('expire_date', '>', date('Y-m-d H:i'))
-        ->where('status', 1)
-        ->whereHas('serviceAdded', function ($coupons) use ($service_id) {
-            $coupons->where('service_id', $service_id);
-        })->get();
+            ->where('status', 1)
+            ->whereHas('serviceAdded', function ($coupons) use ($service_id) {
+                $coupons->where('service_id', $service_id);
+            })->get();
 
         $user_id = Auth::id();
 
@@ -547,7 +553,7 @@ class FrontendController extends Controller
         }
         $datatable = $datatable->eloquent($query)
             ->editColumn('name', function ($data) {
-            return view('category.datatable-card', compact('data'));
+                return view('category.datatable-card', compact('data'));
             })
             ->order(function ($query) {
                 $query->orderBy('id', 'desc');
@@ -565,7 +571,7 @@ class FrontendController extends Controller
         $query = $query->where('category_id', $request->category_id);
         $datatable = $datatable->eloquent($query)
             ->editColumn('name', function ($data) {
-            return view('subcategory.datatable-card', compact('data'));
+                return view('subcategory.datatable-card', compact('data'));
             })
             ->order(function ($query) {
                 $query->orderBy('id', 'desc');
@@ -664,11 +670,11 @@ class FrontendController extends Controller
             ->editColumn('name', function ($data) {
                 $totalReviews = $data->id ? BookingRating::where('service_id', $data->id)->count() : 0;
                 $totalRating = $data->serviceRating ? (float) number_format(max($data->serviceRating->avg('rating'), 0), 2) : 0;
-            if (!empty(auth()->user())) {
-                $favouriteService = $data->getUserFavouriteService()->where('user_id', auth()->user()->id)->get();
-            } else {
-                $favouriteService = collect();
-            }
+                if (!empty(auth()->user())) {
+                    $favouriteService = $data->getUserFavouriteService()->where('user_id', auth()->user()->id)->get();
+                } else {
+                    $favouriteService = collect();
+                }
                 return view('service.datatable-card', compact('data', 'totalReviews', 'totalRating', 'favouriteService'));
             })
             ->order(function ($query) {
@@ -690,7 +696,7 @@ class FrontendController extends Controller
 
         $datatable = $datatable->eloquent($query)
             ->editColumn('name', function ($data) {
-            return view('blog.datatable-card', compact('data'));
+                return view('blog.datatable-card', compact('data'));
             })
             ->order(function ($query) {
                 $query->orderBy('id', 'desc');
@@ -712,10 +718,10 @@ class FrontendController extends Controller
         $datatable = $datatable->eloquent($query)
             ->editColumn('name', function ($data) {
                 $providers_service_rating = (float) 0;
-            $providers_service_rating = (isset($data->getServiceRating) && count($data->getServiceRating) > 0) ?
-                (float) number_format(max($data->getServiceRating->avg('rating'), 0), 2) : 0;
+                $providers_service_rating = (isset($data->getServiceRating) && count($data->getServiceRating) > 0) ?
+                    (float) number_format(max($data->getServiceRating->avg('rating'), 0), 2) : 0;
 
-            return view('provider.datatable-card', compact('data', 'providers_service_rating'));
+                return view('provider.datatable-card', compact('data', 'providers_service_rating'));
             })
             ->order(function ($query) {
                 $query->orderBy('id', 'desc');
@@ -754,9 +760,9 @@ class FrontendController extends Controller
         $datatable = $datatable->eloquent($query)
             ->editColumn('name', function ($data) {
                 $service = optional($data->service);
-            $serviceimage = getSingleMedia($service, 'service_attachment', null);
-            $total_rating = (float) number_format(max(optional($data->service)->serviceRating->avg('rating'), 0), 2);
-            return view('booking.datatable-card', compact('data', 'total_rating', 'serviceimage'));
+                $serviceimage = getSingleMedia($service, 'service_attachment', null);
+                $total_rating = (float) number_format(max(optional($data->service)->serviceRating->avg('rating'), 0), 2);
+                return view('booking.datatable-card', compact('data', 'total_rating', 'serviceimage'));
             });
 
         return $datatable->rawColumns(['name'])
@@ -790,7 +796,7 @@ class FrontendController extends Controller
                     $image = optional(Service::find($serviceId)->getFirstMedia('service_attachment'))->getUrl();
                     return $image;
                 });
-            return view('postrequest.datatable-card', compact('data', 'serviceImages'));
+                return view('postrequest.datatable-card', compact('data', 'serviceImages'));
             })
             ->order(function ($query) {
                 $query->orderBy('id', 'desc');
@@ -862,12 +868,12 @@ class FrontendController extends Controller
                     ? (float)number_format(max($data->serviceRating->avg('rating'), 0), 2)
                     : 0;
 
-            if (!empty(auth()->user())) {
-                $favouriteService = $data->getUserFavouriteService()->where('user_id', auth()->user()->id)->get();
-            } else {
-                $favouriteService = collect();
-            }
-            return view('service.datatable-card', compact('data', 'totalReviews', 'totalRating', 'favouriteService'));
+                if (!empty(auth()->user())) {
+                    $favouriteService = $data->getUserFavouriteService()->where('user_id', auth()->user()->id)->get();
+                } else {
+                    $favouriteService = collect();
+                }
+                return view('service.datatable-card', compact('data', 'totalReviews', 'totalRating', 'favouriteService'));
             });
 
         return $datatable->rawColumns(['name'])
@@ -900,7 +906,7 @@ class FrontendController extends Controller
 
         $datatable = $datatable->eloquent($query)
             ->editColumn('name', function ($data) {
-            return view('ratingreview.datatable-card', compact('data'));
+                return view('ratingreview.datatable-card', compact('data'));
             });
 
         return $datatable->rawColumns(['name'])

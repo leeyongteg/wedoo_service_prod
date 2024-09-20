@@ -9,13 +9,24 @@
             @endif
         </div>
         <div class="col-lg-8 mt-lg-0 mt-5">
+            @php
+                $locale = session()->get('locale') ?: Cookie::get('locale') ?: app()->getLocale();
+            @endphp
             <h5 class="booking-title text-capitalize line-count-1">
                 @if (!isset($data->bookingPackage))
+                    @php
+                        $jsonName = json_decode($data->service->name);
+                        $name = $jsonName->{$locale};
+                    @endphp
                     <a href="{{ route('booking.detail', $data->id) }}">#{{ $data->id }}
-                        {{ $data->service->name }}</a>
+                        {{ $name }}</a>
                 @else
+                    @php
+                        $jsonName = json_decode($data->bookingPackage->name);
+                        $name = $jsonName->{$locale};
+                    @endphp
                     <a href="{{ route('booking.detail', $data->id) }}">#{{ $data->id }}
-                        {{ $data->bookingPackage->name }}</a>
+                        {{ $name }}</a>
                 @endif
             </h5>
             <div class="d-flex align-items-center mt-3 gap-1">
