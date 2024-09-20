@@ -71,7 +71,7 @@
 
     </div>
     <a href="{{ route('service.detail', $data->id) }}" class="service-heading d-block mt-4 p-0">
-        <h5 class="service-heading service-title font-size-18 line-count-2">{{ $data->name }}</h5>
+        <h5 class="service-heading service-title font-size-18 line-count-2">{{ getNameForLocale($data) }}</h5>
     </a>
     <ul class="list-inline price-content mb-0 mt-0 p-0">
         @if ($data->price == 0 && $data->type == 'free')
@@ -165,7 +165,7 @@
                         title: 'Done',
                         text: response.message,
                         icon: 'success',
-                        iconColor: '#5F60B9'
+                        iconColor: '#F05034'
                     }).then((result) => {
                         if (result.isConfirmed) {
                             $('#datatable').DataTable().ajax.reload();
@@ -197,7 +197,7 @@
                         title: 'Done',
                         text: response.message,
                         icon: 'success',
-                        iconColor: '#5F60B9'
+                        iconColor: '#F05034'
                     }).then((result) => {
                         if (result.isConfirmed) {
                             $('#datatable').DataTable().ajax.reload();

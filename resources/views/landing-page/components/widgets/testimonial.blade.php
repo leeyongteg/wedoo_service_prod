@@ -48,7 +48,7 @@
             {{#compare isRatting '==' 'true'}}
             <div class="ratting-block text-sm-end">
                 @include('landing-page.components.widgets.filter-rating')
-                
+
             </div>
             {{/compare}}
         </div>

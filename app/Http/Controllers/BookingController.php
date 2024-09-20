@@ -17,15 +17,17 @@ use App\Models\ServiceAddon;
 use Illuminate\Http\Request;
 use App\Models\BookingRating;
 use App\Models\BookingStatus;
-use App\Models\PostJobRequest;
+use App\Models\PaymentGateway;
 
+use App\Models\PostJobRequest;
 use Yajra\DataTables\DataTables;
+use App\Service\FreemoPayService;
 use App\Traits\NotificationTrait;
 use App\Models\ProviderAddressMapping;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Validator;
-use App\Http\Requests\BookingUpdateRequest;
 use App\Notifications\BookingNotification;
-use App\Service\FreemoPayService;
+use App\Http\Requests\BookingUpdateRequest;
 
 class BookingController extends Controller
 {
@@ -40,6 +42,7 @@ class BookingController extends Controller
         $filter = [
             'status' => $request->status,
         ];
+
         $pageTitle = __('messages.list_form_title', ['form' => __('messages.booking')]);
         $auth_user = authSession();
         $assets = ['datatable'];
@@ -77,7 +80,10 @@ class BookingController extends Controller
                 });
             })
             ->editColumn('service_id', function ($query) {
-                $service_name = ($query->service_id != null && isset($query->service)) ? $query->service->name : "";
+                $locale = session()->get('locale') ?: Cookie::get('locale') ?: app()->getLocale();
+                $jsonName = json_decode($query->service->name);
+                $name = $jsonName->{$locale};
+                $service_name = ($query->service_id != null && isset($query->service)) ? $name : "";
                 return "<a class='btn-link btn-link-hover' href=" . route('booking.show', $query->id) . ">" . $service_name . "</a>";
             })
             ->filterColumn('service_id', function ($query, $keyword) {
@@ -89,9 +95,9 @@ class BookingController extends Controller
                 $sitesetup = Setting::where('type', 'site-setup')->where('key', 'site-setup')->first();
                 $datetime = $sitesetup ? json_decode($sitesetup->value) : null;
 
-            $date = optional($datetime)->date_format && optional($datetime)->time_format
-                ? date(optional($datetime)->date_format, strtotime($query->date)) . ' / ' . date(optional($datetime)->time_format, strtotime($query->date))
-                : $query->date;
+                $date = optional($datetime)->date_format && optional($datetime)->time_format
+                    ? date(optional($datetime)->date_format, strtotime($query->date)) . ' / ' . date(optional($datetime)->time_format, strtotime($query->date))
+                    : $query->date;
 
                 return $date;
             })
@@ -1005,13 +1011,42 @@ class BookingController extends Controller
         $bookingdata = Booking::find($request->id);
 
         if ($request->has('price')) {
-            $validator = Validator::make($request->all(), [
-                'price' => 'required|numeric|min:' . $bookingdata->service->min_price_range . '|max:' . $bookingdata->service->max_price_range,
-            ]);
+            // $validator = Validator::make($request->all(), [
+            //     'price' => 'required|numeric|min:' . $bookingdata->service->min_price_range . '|max:' . $bookingdata->service->max_price_range,
+            // ]);
 
-            if ($validator->fails())
+            // if ($validator->fails())
+            //     return redirect()->back()->withErrors($validator)->withInput();
+            // $price = ($validator->validated())['price'];
+
+
+            // Définir les règles de validation en fonction du type de service
+            $validationRules = [
+                'fixed' => [
+                    'price' => 'required|numeric|min:' . $bookingdata->service->min_price_range . '|max:' . $bookingdata->service->max_price_range,
+                ],
+                'estimate' => [
+                    'price' => 'required|numeric|min:25000',
+                ],
+            ];
+
+            // Vérifier si le type de service est valide
+            if (!isset($validationRules[$bookingdata->service->type])) {
+                return redirect()->back()->withErrors(['service_type' => 'Type de service non valide'])->withInput();
+            }
+
+
+            // Validation
+            $validator = Validator::make($request->all(), $validationRules[$bookingdata->service->type]);
+
+            // Vérifier les erreurs de validation
+            if ($validator->fails()) {
                 return redirect()->back()->withErrors($validator)->withInput();
-            $price = ($validator->validated())['price'];
+            }
+
+            // Obtenir le prix validé
+            $price = $validator->validated()['price'];
+
 
             $bookingdata->update([
                 'price' => $price,
@@ -1055,11 +1090,24 @@ class BookingController extends Controller
         $data = $request->all();
 
         if ($data['payment_type'] !== 'freemopay')
-        return null;
+            return null;
 
-        $appBaseUrl = $data['payment_geteway_data']['freemopay_link_api'];
-        $passwordApp = $data['payment_geteway_data']['freemopay_password_app'];
-        $userApp = $data['payment_geteway_data']['freemopay_username_app'];
+        $pay_setting =  PaymentGateway::where('type', $data['payment_type'])->first();
+
+        $appBaseUrl = '';
+        $userApp = '';
+        $passwordApp = '';
+
+        if ($pay_setting->status == 1) {
+            $value = json_decode($pay_setting->value, true);
+            $liveValue = json_decode($pay_setting->live_value, true);
+
+            // Extraire les valeurs en fonction de is_test
+            $appBaseUrl = $pay_setting->is_test == 0 ? $liveValue['freemopay_link_api'] : $value['freemopay_link_api'];
+            $userApp = $pay_setting->is_test == 0 ? $liveValue['freemopay_username_app'] : $value['freemopay_username_app'];
+            $passwordApp = $pay_setting->is_test == 0 ? $liveValue['freemopay_password_app'] : $value['freemopay_password_app'];
+        }
+
         $freeMoPaymentService = new FreemoPayService($appBaseUrl, $userApp, $passwordApp);
 
         $payer = $request->input('phone_number');
@@ -1070,8 +1118,7 @@ class BookingController extends Controller
             // Gérer le cas où aucune donnée de paiement n'est trouvée pour l'ID de réservation
             return response()->json(['error' => 'Payment data not found for the provided booking ID'], 404);
 
-        $initPaymentResult = $freeMoPaymentService->initPayment($payer, 100);
-        // $initPaymentResult = $freeMoPaymentService->initPayment($payer, $payment_booking_data->total_amount);
+        $initPaymentResult = $freeMoPaymentService->initPayment($payer, $payment_booking_data->total_amount);
 
         if (isset($initPaymentResult->code)) {
             $payment_booking_data->other_transaction_detail = json_encode($initPaymentResult);
@@ -1080,7 +1127,6 @@ class BookingController extends Controller
             $payment_booking_data->other_transaction_detail = json_encode($initPaymentResult);
             $init_freemo_pay_detail  = $freeMoPaymentService->getPaymentStatus($initPaymentResult->reference);
             $payment_booking_data->other_transaction_detail = json_encode($init_freemo_pay_detail);
-
             $payment_booking_data->payment_status = 'pending';
         }
 

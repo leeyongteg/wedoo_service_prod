@@ -77,7 +77,6 @@ class FreemoPayService
         if (!isset($tokenObj->token))
             return null;
 
-
         $token = $tokenObj->token;
         $externalId = $this->generatePaymentReference();
 

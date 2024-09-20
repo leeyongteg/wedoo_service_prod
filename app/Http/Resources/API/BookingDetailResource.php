@@ -16,6 +16,7 @@ class BookingDetailResource extends JsonResource
      */
     public function toArray($request)
     {
+        
         $extraValue = 0;
         if($this->bookingExtraCharge->count() > 0){
             foreach($this->bookingExtraCharge as $chrage){

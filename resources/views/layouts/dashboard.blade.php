@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-',session('locale') ?:  app()->getLocale()) }}">
 
 <head>
     <meta charset="utf-8">
@@ -14,7 +14,7 @@
 
 <body class="" id="app">
     @include('partials._body')
-    
+
 </body>
 
 </html>

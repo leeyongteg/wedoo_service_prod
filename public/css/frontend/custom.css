@@ -253,11 +253,12 @@
   color: rgba(108, 117, 125, 0.95);
   text-decoration: none; }
   .bd-aside a:hover, .bd-aside a:focus {
-    background-color: rgba(95, 96, 185, 0.1); }
+    background-color: rgba(240, 80, 52, 0.1);
+    }
 
 .bd-aside .active {
   font-weight: 600;
-  background-color: rgba(95, 96, 185, 0.1);
+  background-color: rgba(240, 80, 52, 0.1);
   color: var(--bs-primary); }
 
 .bd-aside .btn {
@@ -266,11 +267,12 @@
   color: var(--bs-body-color);
   border: 0; }
   .bd-aside .btn:hover, .bd-aside .btn:focus {
-    background-color: rgba(95, 96, 185, 0.1);
+    background-color: rgba(240, 80, 52, 0.1);
     color: var(--bs-primary); }
   .bd-aside .btn:focus {
-    -webkit-box-shadow: 0 0 0 0.063rem rgba(95, 96, 185, 0.7);
-            box-shadow: 0 0 0 0.063rem rgba(95, 96, 185, 0.7); }
+    -webkit-box-shadow: 0 0 0 0.063rem rgba(240, 80, 52, 0.7);
+      box-shadow: 0 0 0 0.063rem rgba(240, 80, 52, 0.7);
+    }
   .bd-aside .btn::before {
     width: 1.25em;
     line-height: 0;

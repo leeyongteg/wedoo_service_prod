@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', session('locale') ?:  app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="baseUrl" content="{{env('APP_URL')}}" />
+
+        <link rel="stylesheet" href="style.css">
 
         <title>Laravel</title>
 

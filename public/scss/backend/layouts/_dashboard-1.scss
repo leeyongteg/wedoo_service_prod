@@ -448,11 +448,11 @@ a.btn-link-hover:hover {
 		height: auto;
 		padding: 0.75rem 1.625rem;
 		line-height: normal;
-		background-color: rgba(95, 96, 185, 0.1);
-		color: #5F60B9;
+		background-color: rgba(240,80,52, 0.1);
+		color: #F05034;
 
 		&:hover {
-			background-color: #5F60B9;
+			background-color: #F05034;
 			color: #fff;
 		}
 	}
@@ -470,5 +470,5 @@ a.btn-link-hover:hover {
 
 .form-padding-box {
 	padding: 1rem 1.5rem;
-	background-color: rgba(95, 96, 185, 0.1);
+	background-color: rgba(240,80,52, 0.1);
 }

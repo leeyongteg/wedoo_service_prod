@@ -734,7 +734,7 @@
                             title: 'Done',
                             text: response.message,
                             icon: 'success',
-                            iconColor: '#5F60B9'
+                            iconColor: '#F05034'
                         }).then((result) => {
                             if (result.isConfirmed) {
                                 window.location.reload();
@@ -766,7 +766,7 @@
                             title: 'Done',
                             text: response.message,
                             icon: 'success',
-                            iconColor: '#5F60B9'
+                            iconColor: '#F05034'
                         }).then((result) => {
                             if (result.isConfirmed) {
                                 window.location.reload();

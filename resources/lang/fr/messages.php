@@ -414,7 +414,7 @@ return [
     'step_2_dec' => 'Vérifiez tous les détails de votre réservation de service, appliquez votre code coupon et confirmez en cliquant sur Réserver maintenant.',
     'step_3_dec' => 'Sélectionnez le mode de paiement pour votre service acheté et payez en optant pour les options via Wallet ou COD.',
     'continue' => 'Continuer',
-    'schedule_service' => 'Planifier le Service',
+    'schedule_ervice' => 'Planifier le Service',
     'book_service' => 'Réserver le Service',
     'confirm_payment' => 'Confirmer le Paiement',
     'coupon_available' => 'Coupon Disponible',
