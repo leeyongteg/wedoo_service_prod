@@ -42,7 +42,7 @@ use App\Http\Controllers\NotificationTemplatesController;
 use App\Http\Controllers\ServiceAddonController;
 use App\Http\Controllers\FrontendSettingController;
 use App\Http\Controllers\VerificationController;
-
+use Dompdf\Positioner\Fixed;
 
 /*
 |--------------------------------------------------------------------------
@@ -88,7 +88,7 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
 	Route::get('changeStatus', [HomeController::class, 'changeStatus'])->name('changeStatus');
 
 	Route::group(['middleware' => ['permission:category list']], function () {
-		Route::resource('category', CategoryController::class);
+		Route::resource('category', CategoryController::class)->except(['destroy']);
 		Route::get('index_data', [CategoryController::class, 'index_data'])->name('category.index_data');
 		Route::post('category-bulk-action', [CategoryController::class, 'bulk_action'])->name('category.bulk-action');
 		Route::post('category-action', [CategoryController::class, 'action'])->name('category.action');
@@ -97,7 +97,7 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
 	});
 
 	Route::group(['middleware' => ['permission:service list']], function () {
-		Route::resource('service', ServiceController::class);
+		Route::resource('service', ServiceController::class)->except(['destroy']);
 		Route::get('service-index-data', [ServiceController::class, 'index_data'])->name('service.service-index-data');
 		Route::post('service-bulk-action', [ServiceController::class, 'bulk_action'])->name('service.bulk-action');
 		Route::get('user-service-list', [ServiceController::class, 'getUserServiceList'])->name('service.user-service-list');
@@ -115,7 +115,7 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
 	Route::get('provider-edit-time-slot', [ProviderController::class, 'editProviderTimeSlot'])->name('provider.edit-time-slot');
 	Route::post('provider-save-slot', [ProviderSlotController::class, 'store'])->name('providerslot.store');
 	Route::group(['middleware' => ['permission:provider list']], function () {
-		Route::resource('provider', ProviderController::class);
+		Route::resource('provider', ProviderController::class)->except(['destroy']);
 		Route::get('provider/list/{status?}', [ProviderController::class, 'index'])->name('provider.pending');
 		Route::get('provider-index-data', [ProviderController::class, 'index_data'])->name('provider.index_data');
 		Route::get('provider/approve/{id}', [ProviderController::class, 'approve'])->name('provider.approve');
@@ -125,7 +125,7 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
 	});
 
 	Route::group(['middleware' => ['permission:provideraddress list']], function () {
-		Route::resource('provideraddress', ProviderAddressMappingController::class);
+		Route::resource('provideraddress', ProviderAddressMappingController::class)->except(['destroy']);
 		Route::get('provideraddress-index-data', [ProviderAddressMappingController::class, 'index_data'])->name('provideraddress.index_data');
 		Route::post('provideraddress-bulk-action', [ProviderAddressMappingController::class, 'bulk_action'])->name('provideraddress.bulk-action');
 		Route::post('provideraddress/{id}', [ProviderAddressMappingController::class, 'destroy'])->name('provideraddress.destroy');
@@ -133,7 +133,7 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
 	});
 
 	Route::group(['middleware' => ['permission:providertype list']], function () {
-		Route::resource('providertype', ProviderTypeController::class);
+		Route::resource('providertype', ProviderTypeController::class)->except(['destroy']);
 		Route::get('providertype-index-data', [ProviderTypeController::class, 'index_data'])->name('providertype.index_data');
 		Route::post('providertype-bulk-action', [ProviderTypeController::class, 'bulk_action'])->name('providertype.bulk-action');
 		Route::post('providertype-action', [ProviderTypeController::class, 'action'])->name('providertype.action');
@@ -142,7 +142,7 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
 	Route::get('handyman-change-password', [HandymanController::class, 'getChangePassword'])->name('handyman.getchangepassword');
 	Route::post('handyman-change-password', [HandymanController::class, 'changePassword'])->name('handyman.changepassword');
 	Route::group(['middleware' => ['permission:handyman list']], function () {
-		Route::resource('handyman', HandymanController::class);
+		Route::resource('handyman', HandymanController::class)->except(['destroy']);
 		Route::get('handyman/list/{status?}', [HandymanController::class, 'index'])->name('handyman.pending');
 		Route::get('handyman-index-data', [HandymanController::class, 'index_data'])->name('handyman.index_data');
 		Route::post('handyman-bulk-action', [HandymanController::class, 'bulk_action'])->name('handyman.bulk-action');
@@ -154,7 +154,7 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
 	});
 
 	Route::group(['middleware' => ['permission:coupon list']], function () {
-		Route::resource('coupon', CouponController::class);
+		Route::resource('coupon', CouponController::class)->except(['destroy']);
 		Route::get('coupon-index_data', [CouponController::class, 'index_data'])->name('coupon.index_data');
 		Route::post('coupon-bulk-action', [CouponController::class, 'bulk_action'])->name('coupon.bulk-action');
 		Route::post('coupons-action', [CouponController::class, 'action'])->name('coupon.action');
@@ -162,7 +162,7 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
 	});
 
 	Route::group(['middleware' => ['permission:booking list']], function () {
-		Route::resource('booking', BookingController::class);
+		Route::resource('booking', BookingController::class)->except(['destroy']);
 		Route::get('booking-index-data', [BookingController::class, 'index_data'])->name('booking.index_data');
 		Route::post('booking-bulk-action', [BookingController::class, 'bulk_action'])->name('booking.bulk-action');
 		Route::post('booking-status-update', [BookingController::class, 'updateStatus'])->name('bookingStatus.update');
@@ -172,7 +172,7 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
 	});
 
 	Route::group(['middleware' => ['permission:slider list']], function () {
-		Route::resource('slider', SliderController::class);
+		Route::resource('slider', SliderController::class)->except(['destroy']);
 		Route::get('slider-index-data', [SliderController::class, 'index_data'])->name('slider.index_data');
 		Route::post('slider-bulk-action', [SliderController::class, 'bulk_action'])->name('slider.bulk-action');
 		Route::post('slider-action', [SliderController::class, 'action'])->name('slider.action');
@@ -194,7 +194,7 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
 	Route::get('user-change-password', [CustomerController::class, 'getChangePassword'])->name('user.getchangepassword');
 	Route::post('user-change-password', [CustomerController::class, 'changePassword'])->name('user.changepassword');
 	Route::group(['middleware' => ['permission:user list']], function () {
-		Route::resource('user', CustomerController::class);
+		Route::resource('user', CustomerController::class)->except(['destroy']);
 		Route::get('user/list/{status?}', [CustomerController::class, 'index'])->name('user.all');
 		Route::get('user-index-data', [CustomerController::class, 'index_data'])->name('user.index_data');
 		Route::post('user-bulk-action', [CustomerController::class, 'bulk_action'])->name('user.bulk-action');
@@ -277,7 +277,7 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
 	Route::post('cookie-setup-save', [SettingController::class, 'cookieSetup'])->name('cookiesetup');
 
 	Route::group(['middleware' => ['permission:document list|providerdocument list']], function () {
-		Route::resource('document', DocumentsController::class);
+		Route::resource('document', DocumentsController::class)->except(['destroy']);
 		Route::get('document-index-data', [DocumentsController::class, 'index_data'])->name('document.index_data');
 		Route::post('document-bulk-action', [DocumentsController::class, 'bulk_action'])->name('document.bulk-action');
 		Route::post('document-action', [DocumentsController::class, 'action'])->name('document.action');
@@ -285,7 +285,7 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
 	});
 
 	Route::group(['middleware' => ['permission:providerdocument list']], function () {
-		Route::resource('providerdocument', ProviderDocumentController::class);
+		Route::resource('providerdocument', ProviderDocumentController::class)->except(['destroy']);
 		Route::get('providerdocument-index-data', [ProviderDocumentController::class, 'index_data'])->name('providerdocument.index_data');
 		Route::post('providerdocument-bulk-action', [ProviderDocumentController::class, 'bulk_action'])->name('providerdocument.bulk-action');
 		Route::post('providerdocument-action', [ProviderDocumentController::class, 'action'])->name('providerdocument.action');
@@ -296,13 +296,13 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
 	Route::post('ratingreview-action', [RatingReviewController::class, 'action'])->name('ratingreview.action');
 	Route::get('ratingreview-index-data', [RatingReviewController::class, 'index_data'])->name('ratingreview.index_data');
 
-	Route::resource('booking-rating', BookingRatingController::class);
+	Route::resource('booking-rating', BookingRatingController::class)->except(['destroy']);
 	Route::get('booking-rating-index-data', [BookingRatingController::class, 'index_data'])->name('booking-rating.index_data');
 	Route::post('booking-rating-bulk-action', [BookingRatingController::class, 'bulk_action'])->name('booking-rating.bulk-action');
 	Route::post('booking-rating/{id}', [BookingController::class, 'destroy'])->name('booking-rating.destroy');
 	Route::post('booking-rating-action', [CouponController::class, 'action'])->name('booking-rating.action');
 
-	Route::resource('handyman-rating', HandymanRatingController::class);
+	Route::resource('handyman-rating', HandymanRatingController::class)->except(['destroy']);
 	Route::get('handyman-rating-index-data', [HandymanRatingController::class, 'index_data'])->name('handyman-rating.index_data');
 	Route::post('handyman-rating-bulk-action', [HandymanRatingController::class, 'bulk_action'])->name('handyman-rating.bulk-action');
 	Route::post('handyman-rating/{id}', [HandymanController::class, 'destroy'])->name('handyman-rating.destroy');
@@ -313,7 +313,7 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
 
 	Route::post('/razorpay-layout-page', [PaymentGatewayController::class, 'rezorpaypaymentPage'])->name('razorpay_layout_page');
 
-	Route::resource('tax', TaxController::class);
+	Route::resource('tax', TaxController::class)->except(['destroy']);
 	Route::get('tax-index_data', [TaxController::class, 'index_data'])->name('tax.index_data');
 	Route::post('tax-bulk-action', [TaxController::class, 'bulk_action'])->name('tax.bulk-action');
 	Route::post('tax/{id}', [TaxController::class, 'destroy'])->name('tax.destroy');
@@ -325,7 +325,7 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
 	Route::get('handyman-earning', [EarningController::class, 'handymanEarning'])->name('handymanEarning');
 	Route::get('handyman-earning-data', [EarningController::class, 'handymanEarningData'])->name('handymanEarningData');
 
-	Route::resource('providerpayout', ProviderPayoutController::class);
+	Route::resource('providerpayout', ProviderPayoutController::class)->except('destroy', 'create');
 	Route::get('providerpayout-index-data', [ProviderPayoutController::class, 'index_data'])->name('providerpayout.index_data');
 	Route::post('providerpayout-bulk-action', [ProviderPayoutController::class, 'bulk_action'])->name('providerpayout.bulk-action');
 	Route::get('providerpayout/create/{id}', [ProviderPayoutController::class, 'create'])->name('providerpayout.create');
@@ -334,13 +334,13 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
 	Route::get('review/{id}', [ProviderController::class, 'review'])->name('provider.review');
 	Route::post('sidebar-reorder-save', [SettingController::class, 'sequenceSave'])->name('reorderSave');
 
-	Route::resource('handymanpayout', HandymanPayoutController::class);
+	Route::resource('handymanpayout', HandymanPayoutController::class)->except('create');
 	Route::get('handymanpayout-index-data', [HandymanPayoutController::class, 'index_data'])->name('handymanpayout.index_data');
 	Route::post('handymanpayout-bulk-action', [HandymanPayoutController::class, 'bulk_action'])->name('handymanpayout.bulk-action');
 	Route::get('handymanpayout/create/{id}', [HandymanPayoutController::class, 'create'])->name('handymanpayout.create');
 
 	Route::group(['middleware' => ['permission:handymantype list']], function () {
-		Route::resource('handymantype', HandymanTypeController::class);
+		Route::resource('handymantype', HandymanTypeController::class)->except('destroy');
 		Route::get('handyman-index_data', [HandymanTypeController::class, 'index_data'])->name('handymantype.index_data');
 		Route::post('handymantype-bulk-action', [HandymanTypeController::class, 'bulk_action'])->name('handymantype.bulk-action');
 		Route::post('handymantype-action', [HandymanTypeController::class, 'action'])->name('handymantype.action');
@@ -359,21 +359,21 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
 
 	// Route::post('enable-user-wallet', [SettingController::class, 'enableUserWallet'])->name('enableUserWallet');
 
-	Route::resource('wallet', WalletController::class);
+	Route::resource('wallet', WalletController::class)->except('destroy');
 	Route::get('wallet-index-data', [WalletController::class, 'index_data'])->name('wallet.index_data');
 	Route::post('wallet-bulk-action', [WalletController::class, 'bulk_action'])->name('wallet.bulk-action');
 	Route::post('wallet/{id}', [WalletController::class, 'destroy'])->name('wallet.destroy');
 	Route::get('wallet-history-index-data/{id}', [WalletController::class, 'wallethistory_index_data'])->name('wallethistory.index_data');
 
 	Route::group(['middleware' => ['permission:subcategory list']], function () {
-		Route::resource('subcategory', SubCategoryController::class);
+		Route::resource('subcategory', SubCategoryController::class)->except('destroy');
 		Route::get('sub-index-data', [SubCategoryController::class, 'index_data'])->name('subcategory.sub-index-data');
 		Route::post('sub-bulk-action', [SubCategoryController::class, 'bulk_action'])->name('sub-bulk-action');
 		Route::post('subcategory-action', [SubCategoryController::class, 'action'])->name('subcategory.action');
 		Route::post('subcategory/{id}', [SubCategoryController::class, 'destroy'])->name('subcategory.destroy');
 	});
 
-	Route::resource('plans', PlanController::class);
+	Route::resource('plans', PlanController::class)->except('destroy');
 	Route::get('plans-index-data', [PlanController::class, 'index_data'])->name('plans.index_data');
 	Route::post('plans-bulk-action', [PlanController::class, 'bulk_action'])->name('plans.bulk-action');
 	Route::post('plans/{id}', [PlanController::class, 'destroy'])->name('plans.destroy');
@@ -387,7 +387,10 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
 
 
 	Route::get('/provider-detail-page', [ProviderController::class, 'providerDetail'])->name('provider_detail_pages');
-	Route::post('/provider-detail-page', [ProviderController::class, 'providerDetail'])->name('provider_detail_pages');
+    /**
+     * @Fixme: LEE au cas ou nous avons un probleme avec la route en POST
+     */
+	#Route::post('/provider-detail-page', [ProviderController::class, 'providerDetail'])->name('provider_detail_pages');
 	Route::post('/booking-layout-page/{id}', [BookingController::class, 'bookingstatus'])->name('booking_layout_page');
 	Route::get('/invoice_pdf/{id}', [BookingController::class, 'createPDF'])->name('invoice_pdf');
 
@@ -408,7 +411,7 @@ Route::group(['middleware' => ['auth', 'verified']], function () {
 	});
 
 	Route::group(['middleware' => ['permission:blog list']], function () {
-		Route::resource('blog', BlogController::class);
+		Route::resource('blog', BlogController::class)->except('destroy');
 		Route::get('blog-index-data', [BlogController::class, 'index_data'])->name('blog.index_data');
 		Route::post('blog-bulk-action', [BlogController::class, 'bulk_action'])->name('blog.bulk-action');
 		Route::post('blog-action', [BlogController::class, 'action'])->name('blog.action');
